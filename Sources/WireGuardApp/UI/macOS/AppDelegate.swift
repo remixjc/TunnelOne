@@ -11,7 +11,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var tunnelsTracker: TunnelsTracker?
     var statusItemController: StatusItemController?
 
-    var manageTunnelsRootVC: ManageTunnelsRootViewController?
+    var manageTunnelsRootVC: TunnelOneViewController?
     var manageTunnelsWindowObject: NSWindow?
     var onAppDeactivation: (() -> Void)?
 
@@ -227,11 +227,15 @@ extension AppDelegate: StatusMenuWindowDelegate {
             return
         }
         if manageTunnelsWindowObject == nil {
-            manageTunnelsRootVC = ManageTunnelsRootViewController(tunnelsManager: tunnelsManager)
+            manageTunnelsRootVC = TunnelOneViewController(tunnelsManager: tunnelsManager)
             let window = NSWindow(contentViewController: manageTunnelsRootVC!)
             window.title = tr("macWindowTitleManageTunnels")
-            window.setContentSize(NSSize(width: 800, height: 480))
-            window.setFrameAutosaveName(NSWindow.FrameAutosaveName("ManageTunnelsWindow")) // Auto-save window position and size
+            window.styleMask.insert(.fullSizeContentView)
+            window.titlebarAppearsTransparent = true
+            window.titleVisibility = .hidden
+            window.minSize = NSSize(width: 900, height: 660)
+            window.setContentSize(NSSize(width: 1024, height: 760))
+            window.setFrameAutosaveName(NSWindow.FrameAutosaveName("TunnelOnePrototypeWindow"))
             manageTunnelsWindowObject = window
             tunnelsTracker?.manageTunnelsRootVC = manageTunnelsRootVC
         }

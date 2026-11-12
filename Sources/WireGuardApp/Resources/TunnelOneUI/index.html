@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>隧行 TunnelOne</title>
+  <link rel="stylesheet" href="app.css">
+  <script defer src="lucide.min.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+<div id="tunnel-one-prototype">
+  <div class="to-window" aria-label="隧行 macOS 客户端">
+    <header class="to-titlebar">
+      <div class="to-brand"><i data-lucide="waypoints" aria-hidden="true"></i><span>隧行 <small>TunnelOne</small></span></div>
+      <div class="to-title-status" id="to-title-status">正在读取隧道…</div>
+    </header>
+    <div class="to-layout">
+      <aside class="to-sidebar" aria-label="应用导航">
+        <div class="to-sidebar-heading"><span>隧道</span><button class="to-icon-button" data-action="new" aria-label="添加隧道"><i data-lucide="plus"></i></button></div>
+        <div id="to-tunnels" class="to-tunnels"></div>
+        <div class="to-sidebar-actions">
+          <button class="to-side-action" data-action="import"><i data-lucide="download"></i>导入隧道</button>
+          <button class="to-side-action" data-action="export"><i data-lucide="archive"></i>导出所有隧道</button>
+        </div>
+        <div class="to-sidebar-bottom">
+          <button class="to-nav-item" data-page="proxy"><i data-lucide="shuffle"></i>代理配置</button>
+          <button class="to-nav-item" data-page="logs"><i data-lucide="scroll-text"></i>连接日志</button>
+          <button class="to-nav-item" data-page="settings"><i data-lucide="settings-2"></i>设置</button>
+          <div class="to-sidebar-foot"><span class="to-dot good"></span><span>本机处理 · 配置保存在设备</span></div>
+        </div>
+      </aside>
+      <main class="to-main" id="to-main"><p>正在读取隧道…</p></main>
+    </div>
+    <footer class="to-footer"><span id="to-footer-label">连接时同步代理并检查网络</span><span>隧行 <span id="to-version"></span></span></footer>
+  </div>
+</div>
+</body>
+</html>

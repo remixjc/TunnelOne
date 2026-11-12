@@ -6,9 +6,9 @@ public struct ProxySettings: Codable, Equatable {
     public enum Source: String, Codable { case builtIn, external }
     public static let configurationKey = "TunnelOneProxy"
     public var enabled = false
-    public var source: Source = .builtIn
+    public var source: Source = .external
     public var host = "127.0.0.1"
-    public var port = 17890
+    public var port = 7890
     public var bypass = ["localhost", "*.local", "127.0.0.1", "::1"]
     public var profileID: String?
 

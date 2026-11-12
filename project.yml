@@ -12,7 +12,7 @@ settings:
     ENABLE_USER_SCRIPT_SANDBOXING: NO
     ENABLE_HARDENED_RUNTIME: YES
     VERSION_NAME: "0.2.0"
-    VERSION_ID: "3"
+    VERSION_ID: "4"
     HEADER_SEARCH_PATHS:
       - $(SRCROOT)/Sources/Shared/Logging
       - $(SRCROOT)/Sources/WireGuardApp/ZipArchive/3rdparty/minizip
@@ -29,7 +29,10 @@ targets:
     platform: macOS
     sources:
       - path: Sources/WireGuardApp
-        excludes: ["UI/iOS", "UI/macOS/LoginItemHelper", "Config"]
+        excludes: ["UI/iOS", "UI/macOS/LoginItemHelper", "Config", "Resources/TunnelOneUI"]
+      - path: Sources/WireGuardApp/Resources/TunnelOneUI
+        type: folder
+        buildPhase: resources
       - path: Sources/Shared
         excludes: ["Logging/test_ringlogger.c"]
       - path: Sources/WireGuardKit
@@ -60,6 +63,7 @@ targets:
       - sdk: NetworkExtension.framework
       - sdk: ServiceManagement.framework
       - sdk: SystemExtensions.framework
+      - sdk: WebKit.framework
   WireGuardNetworkExtension:
     type: system-extension
     platform: macOS

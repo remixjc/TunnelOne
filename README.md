@@ -16,7 +16,9 @@
   <img src="https://img.shields.io/badge/license-GPL--3.0-b7f7c1" alt="GPL-3.0">
 </p>
 
-TunnelOne 是面向 macOS 的原生 WireGuard 客户端。在 WireGuard 官方 Apple 客户端的基础上，为每个隧道增加「连接时带入代理」开关：只连接隧道，或同时启动内置 Mihomo，并把 HTTP/HTTPS 代理应用到该隧道的网络设置中。
+TunnelOne 是面向 macOS 的 WireGuard 客户端。在 WireGuard 官方 Apple 客户端的基础上，为每个隧道增加「连接时带入代理」开关。关闭时只连接 WireGuard；开启时使用现有 Clash Party，执行安全启动 command 对应的检查、隧道代理同步、国内外联网验证和失败回滚。
+
+**当前工作区修订（尚未发布）：** 主窗口采用原型的侧栏、概览 / 隧道配置 / 按需连接标签页和代理开关布局；通过原生桥接操作真实的隧道管理器。默认代理来源改为本机 Clash Party 的 `127.0.0.1:7890`，不要求另行导入代理 YAML。真实联网验收状态及与 command 的对应关系见 [command 流程对照](docs/design/command-parity.md)。下文 v0.2.0 发布记录仍描述此前发布的 Beta，不能作为这次修订的联网验收证明。
 
 **当前版本：v0.2.0 · System Extension Beta。** 已改为 Developer ID 直接分发使用的系统扩展架构，提供签名、Apple 公证、staple、DMG 和 ZIP 自动发布流程。签名包使用 `-signed` 文件名；未签名包使用 `-preview` 文件名。实际公证和构建结果以对应 Release / Actions 为准。本机已验证安装、系统扩展激活、WireGuard 实际握手及 Clash Party 代理访问；内置代理、多用户、更新和卸载等验收仍需继续，当前按 Beta 发布。
 
@@ -37,13 +39,13 @@ TunnelOne 把代理偏好保存在各自的 VPN 配置中，由 Network Extensio
 | macOS 集成 | 原生 AppKit、菜单栏、Wi-Fi / 以太网按需连接、日志、用户钥匙串、系统扩展安装与移除 |
 | 进程与配置隔离 | XPC 每条消息校验签名，系统配置按 UID 隔离；Mihomo 以普通用户身份运行 |
 | 每隧道代理开关 | 默认关闭；与标准 `.conf` 分开保存，编辑隧道时保留代理偏好 |
-| 内置代理 | 打包 Mihomo；导入本地 YAML；扩展负责启动、停止和异常退出处理 |
-| 外部代理 | 使用已运行的 HTTP / mixed 代理，如 `127.0.0.1:7890` 的 Clash Party |
-| 生命周期 | 应用 HTTP/HTTPS 代理、检查监听端口；启动失败回滚；内置核心异常退出则请求断开 |
+| 默认代理入口 | 使用现有 Clash Party；主窗口和菜单栏连接时尝试在后台打开客户端 |
+| 安全启动 | 检查 Clash 系统代理 / TUN / 模式 / 端口；确认路由及生效的 HTTP/HTTPS/SOCKS 代理；运行两项联网检查，失败回滚 |
+| 历史内置配置 | 保留旧配置的内置核心运行支持；主窗口不再引导导入 YAML 或选择新节点 |
 | 官网与原型 | 响应式静态官网、可交互模拟、独立设计原型、GitHub Pages 自动部署 |
 | 构建与发布 | Apple Silicon + Intel universal；ZIP、DMG、SHA-256；tag 触发签名、公证及 Beta 发布 |
 
-当前**没有**实现订阅 URL 管理、节点可视化选择、测速、应用内自动更新和独立的全应用 TUN 代理。节点、代理组、规则与模式由 YAML 管理；修改配置后重新导入。原型包含后续设计方向，不等同于当前原生应用界面或功能承诺。
+当前**没有**实现订阅 URL 管理、节点可视化选择、测速、应用内自动更新和独立的全应用 TUN 代理。节点、规则和订阅继续由已有 Clash Party 管理。原型内的数据与连接为模拟；应用窗口读取实际隧道状态、统计和扩展检查报告，不使用模拟结果。
 
 ## 工作原理
 
@@ -76,13 +78,11 @@ WireGuard 实际 utun 接口 → WireGuard 服务器 → 目标 / 代理节点
 
 1. 把 signed 应用放到 `/Applications`，打开 TunnelOne，按系统提示允许网络扩展。
 2. 导入 WireGuard `.conf` 或 ZIP；首次连接允许系统添加 VPN 配置。
-3. 选中隧道，打开详情中的「连接时带入代理 · 设置…」。
-4. 选择模式：
-   - **内置 Mihomo**：导入 Mihomo / Clash YAML，打开开关。默认端口 `17890`。
-   - **本机 / 外部代理**：填写 HTTP / mixed 代理地址与端口；确保该服务已运行。
-5. 保存后连接隧道。菜单栏和按需连接会使用同一份偏好。
+3. 在 Clash Party 中保持「系统代理开启、TUN 关闭、规则模式、混合端口 7890」。
+4. 选中隧道，在概览打开「连接时带入代理」，然后点击「开启」。
+5. 应用检查物理网络代理，建立 WireGuard、同步隧道代理，并检查百度直连与 Google 代理访问。全部通过才保持连接，失败则停止本次隧道，保留原有 Clash。只需要 WireGuard 时关闭该开关。
 
-修改代理设置前必须断开该隧道并暂时关闭按需连接。保存后下次连接生效。导入的 WireGuard 隧道默认关闭代理；标准 WireGuard 导出文件不包含代理偏好或 YAML。
+修改代理开关前必须断开该隧道并暂时关闭按需连接。保存后下次连接生效。导入的 WireGuard 隧道默认关闭代理；标准 WireGuard 导出文件不包含代理偏好。已有内置模式设置会保留，关闭再打开主窗口的代理开关会改用 Clash Party。按需连接同样执行扩展内的安全检查，但需要 Clash Party 已在对应用户会话中运行。
 
 `examples/proxy.yaml` 是不含节点凭据的 DIRECT 示例，只用于理解格式，不提供网络服务。代理 YAML 首先做 UTF-8 与大小检查，连接时再由 YAML 解析器和 Mihomo 校验。
 
@@ -117,6 +117,7 @@ GOPROXY=https://goproxy.cn,direct bash scripts/build.sh
 
 ```bash
 bash scripts/test.sh
+node scripts/client-ui.test.cjs
 bash scripts/package.sh preview
 
 # 网站测试（需 Node.js）

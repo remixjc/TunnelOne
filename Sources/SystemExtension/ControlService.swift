@@ -56,4 +56,8 @@ private final class UserControl: NSObject, SystemExtensionControl {
     func lastError(_ identifier: String, reply: @escaping (String?) -> Void) {
         reply(SnapshotStore.shared.lastError(identifier, uid: uid))
     }
+
+    func safetyReport(_ identifier: String, reply: @escaping (Data?) -> Void) {
+        reply(SnapshotStore.shared.safetyReport(identifier, uid: uid))
+    }
 }

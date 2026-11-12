@@ -20,7 +20,7 @@ class TunnelsTracker {
             statusItemController?.currentTunnel = currentTunnel
         }
     }
-    weak var manageTunnelsRootVC: ManageTunnelsRootViewController?
+    weak var manageTunnelsRootVC: TunnelOneViewController?
 
     private var tunnelsManager: TunnelsManager
     private var tunnelStatusObservers = [AnyObject]()
@@ -69,11 +69,11 @@ extension TunnelsTracker: TunnelsManagerListDelegate {
         tunnelStatusObservers.insert(statusObservationToken, at: index)
 
         statusMenu?.insertTunnelMenuItem(for: tunnel, at: index)
-        manageTunnelsRootVC?.tunnelsListVC?.tunnelAdded(at: index)
+        manageTunnelsRootVC?.reloadTunnels()
     }
 
     func tunnelModified(at index: Int) {
-        manageTunnelsRootVC?.tunnelsListVC?.tunnelModified(at: index)
+        manageTunnelsRootVC?.reloadTunnels()
     }
 
     func tunnelMoved(from oldIndex: Int, to newIndex: Int) {
@@ -81,14 +81,14 @@ extension TunnelsTracker: TunnelsManagerListDelegate {
         tunnelStatusObservers.insert(statusObserver, at: newIndex)
 
         statusMenu?.moveTunnelMenuItem(from: oldIndex, to: newIndex)
-        manageTunnelsRootVC?.tunnelsListVC?.tunnelMoved(from: oldIndex, to: newIndex)
+        manageTunnelsRootVC?.reloadTunnels()
     }
 
     func tunnelRemoved(at index: Int, tunnel: TunnelContainer) {
         tunnelStatusObservers.remove(at: index)
 
         statusMenu?.removeTunnelMenuItem(at: index)
-        manageTunnelsRootVC?.tunnelsListVC?.tunnelRemoved(at: index)
+        manageTunnelsRootVC?.reloadTunnels()
     }
 }
 

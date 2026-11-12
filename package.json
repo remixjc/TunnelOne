@@ -3,7 +3,8 @@
   "version": "0.2.0",
   "private": true,
   "scripts": {
-    "test:site": "node scripts/site.test.cjs"
+    "test:site": "node scripts/site.test.cjs",
+    "test:client-ui": "node scripts/client-ui.test.cjs"
   },
   "devDependencies": {
     "lucide": "0.468.0",

@@ -85,6 +85,8 @@ final class SnapshotStore {
             if FileManager.default.fileExists(atPath: url.path) { try FileManager.default.removeItem(at: url) }
             let errorURL = url.appendingPathExtension("error")
             if FileManager.default.fileExists(atPath: errorURL.path) { try FileManager.default.removeItem(at: errorURL) }
+            let reportURL = url.appendingPathExtension("safety")
+            if FileManager.default.fileExists(atPath: reportURL.path) { try FileManager.default.removeItem(at: reportURL) }
         }
     }
 
@@ -105,6 +107,23 @@ final class SnapshotStore {
             guard let url = try? path(identifier, uid: uid).appendingPathExtension("error"),
                   let data = try? Data(contentsOf: url), data.count < 4096 else { return nil }
             return String(data: data, encoding: .utf8)
+        }
+    }
+
+    func recordSafetyReport(_ report: SafetyStartReport, identifier: String, uid: uid_t) {
+        queue.sync {
+            guard let url = try? path(identifier, uid: uid).appendingPathExtension("safety"),
+                  let data = try? JSONEncoder().encode(report) else { return }
+            try? data.write(to: url, options: .atomic)
+            try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
+        }
+    }
+
+    func safetyReport(_ identifier: String, uid: uid_t) -> Data? {
+        queue.sync {
+            guard let url = try? path(identifier, uid: uid).appendingPathExtension("safety"),
+                  let data = try? Data(contentsOf: url), data.count < 65536 else { return nil }
+            return data
         }
     }
 }

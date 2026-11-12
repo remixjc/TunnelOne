@@ -62,6 +62,7 @@ final class SnapshotStoreTests: XCTestCase {
     func testBuiltInProfileMustBeBoundedAndPresent() throws {
         var proxy = ProxySettings()
         proxy.enabled = true
+        proxy.source = .builtIn
         proxy.profileID = UUID().uuidString
         XCTAssertThrowsError(try SystemExtensionConfiguration(wireGuard: "config", proxy: proxy, profile: nil).validate())
         XCTAssertThrowsError(try SystemExtensionConfiguration(wireGuard: "config", proxy: proxy,
@@ -69,5 +70,24 @@ final class SnapshotStoreTests: XCTestCase {
         try SystemExtensionConfiguration(wireGuard: "config", proxy: proxy, profile: Data("rules: []".utf8)).validate()
         XCTAssertThrowsError(try SystemExtensionConfiguration(identifier: "../../bad", wireGuard: "config",
             proxy: ProxySettings(), profile: nil).validate())
+    }
+
+    func testSafetyReportsRemainPrivateAndUserScoped() throws {
+        let value = snapshot()
+        try store.save(value, uid: uid)
+        var report = SafetyStartReport()
+        report.result = "failed"
+        report.stage = "已自动断开本次 WireGuard"
+        report.reason = "国内直连检查失败"
+        report.checks = [SafetyProbe(name: "国内直连", ok: false, http: "000")]
+        store.recordSafetyReport(report, identifier: value.identifier, uid: uid)
+        let data = try XCTUnwrap(store.safetyReport(value.identifier, uid: uid))
+        XCTAssertEqual(try JSONDecoder().decode(SafetyStartReport.self, from: data).reason, report.reason)
+        XCTAssertNil(store.safetyReport(value.identifier, uid: uid + 1))
+        let file = base.appendingPathComponent("Configurations/\(uid)/\(value.identifier).json.safety")
+        let permissions = try FileManager.default.attributesOfItem(atPath: file.path)[.posixPermissions] as? Int
+        XCTAssertEqual(permissions, 0o600)
+        try store.remove(value.identifier, uid: uid)
+        XCTAssertNil(store.safetyReport(value.identifier, uid: uid))
     }
 }

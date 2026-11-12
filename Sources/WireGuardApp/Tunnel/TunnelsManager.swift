@@ -4,6 +4,9 @@
 import Foundation
 import NetworkExtension
 import os.log
+#if os(macOS)
+import AppKit
+#endif
 
 protocol TunnelsManagerListDelegate: AnyObject {
     func tunnelAdded(at index: Int)
@@ -20,6 +23,7 @@ protocol TunnelsManagerActivationDelegate: AnyObject {
 }
 
 class TunnelsManager {
+    private var pendingSafetyChecks = Set<ObjectIdentifier>()
     private var tunnels: [TunnelContainer]
     weak var tunnelsListDelegate: TunnelsManagerListDelegate?
     weak var activationDelegate: TunnelsManagerActivationDelegate?
@@ -446,6 +450,27 @@ class TunnelsManager {
     }
 
     func startActivation(of tunnel: TunnelContainer) {
+        #if os(macOS)
+        if let settings = try? tunnel.readProxySettings(), settings.enabled, settings.source == .external {
+            guard tunnels.contains(tunnel), tunnel.status == .inactive,
+                  pendingSafetyChecks.insert(ObjectIdentifier(tunnel)).inserted else { return }
+            SystemExtensionClient.requireSafetySupport { [weak self] error in
+                guard let self = self else { return }
+                self.pendingSafetyChecks.remove(ObjectIdentifier(tunnel))
+                guard self.tunnels.contains(tunnel), tunnel.status == .inactive else { return }
+                if let error = error {
+                    self.activationDelegate?.tunnelActivationAttemptFailed(tunnel: tunnel, error: .failedWhileStarting(systemError: error))
+                } else {
+                    self.startActivationAfterSafetyCheck(of: tunnel)
+                }
+            }
+            return
+        }
+        #endif
+        startActivationAfterSafetyCheck(of: tunnel)
+    }
+
+    private func startActivationAfterSafetyCheck(of tunnel: TunnelContainer) {
         guard tunnels.contains(tunnel) else { return } // Ensure it's not deleted
         guard tunnel.status == .inactive else {
             activationDelegate?.tunnelActivationAttemptFailed(tunnel: tunnel, error: .tunnelIsNotInactive)
@@ -479,6 +504,14 @@ class TunnelsManager {
         #if targetEnvironment(simulator)
         tunnel.status = .active
         #else
+        #if os(macOS)
+        if let settings = try? tunnel.readProxySettings(), settings.enabled, settings.source == .external,
+           let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "party.mihomo.app") {
+            let configuration = NSWorkspace.OpenConfiguration()
+            configuration.activates = false
+            NSWorkspace.shared.openApplication(at: url, configuration: configuration)
+        }
+        #endif
         tunnel.startActivation(activationDelegate: activationDelegate)
         #endif
 
@@ -667,6 +700,14 @@ class TunnelContainer: NSObject {
             completionHandler(tunnelConfiguration)
             return
         }
+    }
+
+    func getSafetyReport(completionHandler: @escaping (SafetyStartReport?) -> Void) {
+        guard let proto = tunnelProvider.protocolConfiguration as? NETunnelProviderProtocol,
+              let identifier = proto.providerConfiguration?[SystemExtensionConfiguration.snapshotKey] as? String else {
+            completionHandler(nil); return
+        }
+        SystemExtensionClient.safetyReport(identifier, completion: completionHandler)
     }
 
     func refreshStatus() {

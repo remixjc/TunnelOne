@@ -46,6 +46,7 @@ public struct SystemExtensionConfiguration: Codable {
     func putSnapshot(_ data: Data, reply: @escaping (NSError?) -> Void)
     func removeSnapshot(_ identifier: String, reply: @escaping (NSError?) -> Void)
     func lastError(_ identifier: String, reply: @escaping (String?) -> Void)
+    func safetyReport(_ identifier: String, reply: @escaping (Data?) -> Void)
 }
 
 public enum SystemExtensionIdentity {

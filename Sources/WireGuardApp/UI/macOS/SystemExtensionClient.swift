@@ -59,6 +59,22 @@ enum SystemExtensionClient {
             (value: String?, _) in completion(value)
         }
     }
+
+    static func safetyReport(_ identifier: String, completion: @escaping (SafetyStartReport?) -> Void) {
+        request({ service, reply in service.safetyReport(identifier) { reply($0, nil) } }) {
+            (value: Data?, _) in completion(value.flatMap { try? JSONDecoder().decode(SafetyStartReport.self, from: $0) })
+        }
+    }
+
+    /// The Mach service includes this app's build number. A successful reply
+    /// proves the extension for this build implements the safety report API.
+    static func requireSafetySupport(completion: @escaping (Error?) -> Void) {
+        request({ service, reply in service.safetyReport(UUID().uuidString) { _ in reply(true, nil) } }) {
+            (ready: Bool?, error) in
+            completion(ready == true && error == nil ? nil : ClashSafetyStart.Failure(
+                "新版网络扩展尚未就绪，尚未启动连接。请先完成 TunnelOne 网络扩展的安装 / 更新。"))
+        }
+    }
 }
 
 extension NETunnelProviderManager {

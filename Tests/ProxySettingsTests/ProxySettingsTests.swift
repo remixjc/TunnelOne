@@ -9,12 +9,14 @@ final class ProxySettingsTests: XCTestCase {
     func testEnabledBuiltInRequiresProfile() {
         var settings = ProxySettings()
         settings.enabled = true
+        settings.source = .builtIn
         XCTAssertThrowsError(try settings.encoded())
     }
 
     func testRoundTripPreservesTunnelPreference() throws {
         var settings = ProxySettings()
         settings.enabled = true
+        settings.source = .builtIn
         settings.profileID = UUID().uuidString
         settings.port = 17891
         XCTAssertEqual(try ProxySettings.decode(settings.encoded()), settings)

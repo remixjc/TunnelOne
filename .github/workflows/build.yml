@@ -88,6 +88,14 @@ jobs:
           fi
       - name: Test
         run: bash scripts/test.sh
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Test client UI native action bridge
+        run: |
+          npm ci
+          npx playwright install chromium
+          npm run test:client-ui
       - name: Notarize application and staple ticket
         if: steps.signing.outputs.signed == 'true'
         env:
