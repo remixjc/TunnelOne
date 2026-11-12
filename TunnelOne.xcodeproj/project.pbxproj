@@ -40,6 +40,7 @@
 		3A39830EFFF1FD06CBC90367 /* IPAddressRange.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C76373AA615AA18A84275A9 /* IPAddressRange.swift */; };
 		3BC9076FA1F87CA5581E5FC6 /* SystemExtensionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BAAD8D5E9A25C74E068D655 /* SystemExtensionController.swift */; };
 		3FB844CC31FE6DE27DA95122 /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = C83B0605DC7FA1154DECEFCD /* Keychain.swift */; };
+		3FCBEDF1A0DA14F6DA7A3A68 /* SafetyHTTPResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD578B1292EBA5797ED30B8 /* SafetyHTTPResponse.swift */; };
 		403E43F49390C2948B96A8A3 /* TunnelOneUI in Resources */ = {isa = PBXBuildFile; fileRef = 44C99DDED649723E9B7F3FCC /* TunnelOneUI */; };
 		41524CFD877407A3036A0AB3 /* String+ArrayConversion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 497591CF7A5D8CEFF8D0F6B5 /* String+ArrayConversion.swift */; };
 		421EA1CCE4E81CADFD0CB0DE /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 68941D9F503B09306D6858B3 /* InfoPlist.strings */; };
@@ -48,6 +49,7 @@
 		48236618C58B75F0A966226B /* PacketTunnelSettingsGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA6906366FC11850BC2A2797 /* PacketTunnelSettingsGenerator.swift */; };
 		4BFE1E7D567A20F474131ADC /* TunnelConfiguration+WgQuickConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C60B05787AAB719AB347EDB /* TunnelConfiguration+WgQuickConfig.swift */; };
 		4E2872591D239F28F7600F73 /* x25519.c in Sources */ = {isa = PBXBuildFile; fileRef = 02FDF7F5352E7EF14EC128C6 /* x25519.c */; };
+		4F26C8C42363E51A5335AF8A /* TunnelConnectivityProbe.swift in Sources */ = {isa = PBXBuildFile; fileRef = 006BB51E8A8484C0C620D5B4 /* TunnelConnectivityProbe.swift */; };
 		4FAF617C054848AA22556908 /* NSColor+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9D0F3D0C132B318DD9197C8 /* NSColor+Hex.swift */; };
 		50E8134ECF17B4B75858BFBB /* TunnelErrors.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA7C756CACAF58333D04077D /* TunnelErrors.swift */; };
 		5102C4BB90BB4BA9AE4AE3B3 /* ProxySettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C38CF4877578CB3CBCFEDFE /* ProxySettingsViewController.swift */; };
@@ -58,6 +60,7 @@
 		5858EC4D84C343305427C56B /* ProxySettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7435D4C0B919AF9AE5ED02ED /* ProxySettings.swift */; };
 		5B25CBD112BF3DAAEF2E1BAD /* ControlService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840BD262524D0A6D03AFF1B3 /* ControlService.swift */; };
 		5D7F9391427419B1DA530F31 /* InterfaceConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86CC79EDDE3E8EFD2B5344CA /* InterfaceConfiguration.swift */; };
+		5E078BE74397D5905719F378 /* SafetyHTTPResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD578B1292EBA5797ED30B8 /* SafetyHTTPResponse.swift */; };
 		60F75912453B1912319B65D0 /* ZipExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96048EBA24685AAD15654C6F /* ZipExporter.swift */; };
 		625E327EB49B669A4DE35228 /* TunnelViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6639DA22892121A6C340702 /* TunnelViewModel.swift */; };
 		637B08C4C5807D2549CA4B46 /* OnDemandWiFiControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D925DB715773FEA75868880 /* OnDemandWiFiControls.swift */; };
@@ -180,6 +183,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		006BB51E8A8484C0C620D5B4 /* TunnelConnectivityProbe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TunnelConnectivityProbe.swift; sourceTree = "<group>"; };
 		02FDF7F5352E7EF14EC128C6 /* x25519.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = x25519.c; sourceTree = "<group>"; };
 		032C49C4F6372887AA48B7FF /* WireGuardAppError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WireGuardAppError.swift; sourceTree = "<group>"; };
 		037C75EEDB0F9EC4EC01B7C9 /* fi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fi; path = fi.lproj/Localizable.strings; sourceTree = "<group>"; };
@@ -224,6 +228,7 @@
 		483FF51C2E2188F0B3260236 /* ErrorNotifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorNotifier.swift; sourceTree = "<group>"; };
 		497591CF7A5D8CEFF8D0F6B5 /* String+ArrayConversion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+ArrayConversion.swift"; sourceTree = "<group>"; };
 		4A0080652B77B472372687B3 /* MacAppStoreUpdateDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacAppStoreUpdateDetector.swift; sourceTree = "<group>"; };
+		4CD578B1292EBA5797ED30B8 /* SafetyHTTPResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafetyHTTPResponse.swift; sourceTree = "<group>"; };
 		5116F22658BAE195AA77409F /* WireGuardResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WireGuardResult.swift; sourceTree = "<group>"; };
 		516C42682D89656DEE6D2F65 /* highlighter.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = highlighter.c; sourceTree = "<group>"; };
 		52EE6416B70F2B659EB13B16 /* ConfTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfTextView.swift; sourceTree = "<group>"; };
@@ -374,6 +379,7 @@
 			children = (
 				C45C7BD943932BC8183E9E76 /* ClashSafetyStart.swift */,
 				7435D4C0B919AF9AE5ED02ED /* ProxySettings.swift */,
+				4CD578B1292EBA5797ED30B8 /* SafetyHTTPResponse.swift */,
 				92A51A057AD166A063E11CAA /* SystemExtensionConfiguration.swift */,
 			);
 			path = TunnelOneShared;
@@ -520,6 +526,7 @@
 			children = (
 				5BA178383F8E05C179974F3F /* Shared */,
 				DE6305144945621020CC56F6 /* SystemExtension */,
+				F56C63FAA2764B5B2A3AF036 /* TunnelOneConnectivity */,
 				44D6AEC0AF46906C674CDD73 /* TunnelOneShared */,
 				5AE5DB682229096F3B5E891D /* WireGuardApp */,
 				C034198F431C3109C124BBE1 /* WireGuardKit */,
@@ -609,6 +616,14 @@
 				E27ADD481695690B03611D17 /* SnapshotStore.swift */,
 			);
 			path = SystemExtension;
+			sourceTree = "<group>";
+		};
+		F56C63FAA2764B5B2A3AF036 /* TunnelOneConnectivity */ = {
+			isa = PBXGroup;
+			children = (
+				006BB51E8A8484C0C620D5B4 /* TunnelConnectivityProbe.swift */,
+			);
+			path = TunnelOneConnectivity;
 			sourceTree = "<group>";
 		};
 		F5DC277CB67DE2EE0656323E /* WireGuardNetworkExtension */ = {
@@ -863,11 +878,13 @@
 				1E14244952EFCC73A984D25D /* ProxyProfileStore.swift in Sources */,
 				7D04FE1883E39B27F48E2681 /* ProxyRuntime.swift in Sources */,
 				5858EC4D84C343305427C56B /* ProxySettings.swift in Sources */,
+				5E078BE74397D5905719F378 /* SafetyHTTPResponse.swift in Sources */,
 				E9938E509B9D9D769ABCD77B /* SnapshotStore.swift in Sources */,
 				2381A33BD22A74E455A92817 /* String+ArrayConversion.swift in Sources */,
 				EFA5CDAFC4231603BF5290C0 /* SystemExtensionConfiguration.swift in Sources */,
 				4BFE1E7D567A20F474131ADC /* TunnelConfiguration+WgQuickConfig.swift in Sources */,
 				4363283939F27DEDF66F0A73 /* TunnelConfiguration.swift in Sources */,
+				4F26C8C42363E51A5335AF8A /* TunnelConnectivityProbe.swift in Sources */,
 				2B50294422D3F1A2BD71081D /* WireGuardAdapter.swift in Sources */,
 				5724FEB1060B40943208BEBF /* key.c in Sources */,
 				BD4FE5C71B8A4BA91FD1F6CA /* main.swift in Sources */,
@@ -923,6 +940,7 @@
 				C279B727485C49008BECA35E /* ProxyProfileStore.swift in Sources */,
 				A7A3F97B6F329DB991E19FDA /* ProxySettings.swift in Sources */,
 				5102C4BB90BB4BA9AE4AE3B3 /* ProxySettingsViewController.swift in Sources */,
+				3FCBEDF1A0DA14F6DA7A3A68 /* SafetyHTTPResponse.swift in Sources */,
 				F7598D0EE6D871066AA353DF /* StatusItemController.swift in Sources */,
 				E47F6F0E94478465F0C92FC8 /* StatusMenu.swift in Sources */,
 				41524CFD877407A3036A0AB3 /* String+ArrayConversion.swift in Sources */,
@@ -1203,8 +1221,8 @@
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_PRECOMPILE_BRIDGING_HEADER = NO;
 				SWIFT_VERSION = 5.0;
-				VERSION_ID = 7;
-				VERSION_NAME = 0.2.3;
+				VERSION_ID = 8;
+				VERSION_NAME = 0.2.4;
 			};
 			name = Release;
 		};
@@ -1301,8 +1319,8 @@
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_PRECOMPILE_BRIDGING_HEADER = NO;
 				SWIFT_VERSION = 5.0;
-				VERSION_ID = 7;
-				VERSION_NAME = 0.2.3;
+				VERSION_ID = 8;
+				VERSION_NAME = 0.2.4;
 			};
 			name = Debug;
 		};

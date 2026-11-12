@@ -22,9 +22,12 @@ public struct SafetyProbe: Codable, Equatable {
     public let http: String
     public let exitCode: Int32?
     public let detail: String?
-    public init(name: String, ok: Bool, http: String, exitCode: Int32? = nil, detail: String? = nil) {
+    public let transport: String?
+    public init(name: String, ok: Bool, http: String, exitCode: Int32? = nil, detail: String? = nil,
+                transport: String? = nil) {
         self.name = name; self.ok = ok; self.http = http
         self.exitCode = exitCode; self.detail = detail
+        self.transport = transport
     }
     public var failureDescription: String {
         let code = exitCode.map { "，curl \($0)" } ?? ""

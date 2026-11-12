@@ -143,7 +143,8 @@ final class TunnelOneViewController: NSViewController, TunnelEditViewControllerD
                     if self.reports[name]?.stage != report.stage || self.reports[name]?.result != report.result {
                         self.addLog("\(name)：\(report.stage)\(report.reason.map { " · " + $0 } ?? "")")
                         for check in report.checks {
-                            self.addLog(check.ok ? "\(check.name)：通过 · HTTP \(check.http)" : check.failureDescription)
+                            self.addLog((check.ok ? "\(check.name)：通过 · HTTP \(check.http)" : check.failureDescription) +
+                                (check.transport.map { " · \($0)" } ?? ""))
                         }
                     }
                     self.reports[name] = report

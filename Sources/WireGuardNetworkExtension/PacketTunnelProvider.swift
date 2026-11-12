@@ -67,7 +67,10 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
                         throw ClashSafetyStart.Failure("安全启动使用 Clash Party 的本机混合端口 127.0.0.1:7890。")
                     }
                     let policy = ClashSafetyStart(environment: MacClashSafetyEnvironment(home: home,
-                        performActiveMutation: { try cancellation.performActiveMutation($0) }))
+                        performActiveMutation: { try cancellation.performActiveMutation($0) },
+                        directProbe: {
+                            TunnelConnectivityProbe.run(provider: self, isCancelled: { cancellation.isCancelled })
+                        }))
                     let preparation = try policy.prepare()
                     DispatchQueue.main.async {
                         guard generation == self.generation, !cancellation.isCancelled else { return }

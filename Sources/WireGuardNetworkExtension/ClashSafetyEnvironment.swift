@@ -6,10 +6,13 @@ final class MacClashSafetyEnvironment: ClashSafetyEnvironment {
     private let home: URL
     private let store = SCDynamicStoreCreate(nil, "TunnelOne.SafeStart" as CFString, nil, nil)!
     private let performActiveMutation: (() throws -> Void) throws -> Void
+    private let directProbe: () throws -> SafetyProbe
 
-    init(home: URL, performActiveMutation: @escaping (() throws -> Void) throws -> Void) {
+    init(home: URL, performActiveMutation: @escaping (() throws -> Void) throws -> Void,
+         directProbe: @escaping () throws -> SafetyProbe) {
         self.home = home
         self.performActiveMutation = performActiveMutation
+        self.directProbe = directProbe
     }
 
     func clashConfiguration() throws -> (app: String, core: String) {
@@ -75,16 +78,20 @@ final class MacClashSafetyEnvironment: ClashSafetyEnvironment {
     }
 
     func probe(proxy: Bool) throws -> SafetyProbe {
-        let options = proxy ? ["--noproxy", "", "--proxy", "http://127.0.0.1:7890"] : ["--noproxy", "*"]
-        let url = proxy ? "https://www.google.com/generate_204" : "https://www.baidu.com"
+        // A child curl inherits the provider's network context. Its default
+        // resolver/socket path is not an ordinary client's route through VPN.
+        guard proxy else { return try directProbe() }
+        let options = ["--noproxy", "", "--proxy", "http://127.0.0.1:7890"]
+        let url = "https://www.google.com/generate_204"
         let result = try command("/usr/bin/curl", [
             "--disable", "--silent", "--show-error", "--output", "/dev/null", "--connect-timeout", "4",
             "--max-time", "7", "--write-out", "%{http_code}"
         ] + options + [url], timeout: 9)
         let code = result.output.trimmingCharacters(in: .whitespacesAndNewlines)
-        return SafetyProbe(name: proxy ? "国外代理" : "国内直连",
+        return SafetyProbe(name: "国外代理",
                            ok: result.status == 0 && (200..<400).contains(Int(code) ?? 0), http: code,
-                           exitCode: result.status, detail: result.error.isEmpty ? nil : result.error)
+                           exitCode: result.status, detail: result.error.isEmpty ? nil : result.error,
+                           transport: "Clash HTTP 代理")
     }
 
     func pause() { Thread.sleep(forTimeInterval: 0.25) }
