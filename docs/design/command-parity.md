@@ -1,4 +1,4 @@
-# 原型与安全启动 command 的实现对照
+# v0.2.1 原型与安全启动 command 的实现对照
 
 本次修订以用户指出的两个问题为范围：主窗口未按原型实现；开启后缺少 `local/legacy-tools/WireGuard与Clash安全启动.command` 中的实际操作。该 command 保持原样，作为行为对照。
 
