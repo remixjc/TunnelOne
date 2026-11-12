@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 import Cocoa
 import WebKit
+import SystemConfiguration
 
 /// Uses the approved prototype's layout and CSS. All actions cross this narrow
 /// bridge to the existing native tunnel manager; the page has no network access.
@@ -99,7 +100,7 @@ final class TunnelOneViewController: NSViewController, TunnelEditViewControllerD
                 "status": tunnel.status.debugDescription, "statusLabel": statusLabel(tunnel.status),
                 "proxyEnabled": settings?.enabled ?? false,
                 "safetyMode": settings?.source == .external,
-                "proxySource": settings?.source == .builtIn ? "已有内置 Mihomo 配置" : "本机代理 · Clash Party",
+                "proxySource": settings?.source == .builtIn ? "已有内置 Mihomo 配置" : "自动沿用系统代理",
                 "address": model.interfaceData[.addresses], "dns": model.interfaceData[.dns],
                 "publicKey": model.interfaceData[.publicKey], "mtu": model.interfaceData[.mtu],
                 "listenPort": model.interfaceData[.listenPort],
@@ -116,6 +117,7 @@ final class TunnelOneViewController: NSViewController, TunnelEditViewControllerD
         }
         let data: [String: Any] = [
             "tunnels": tunnels, "logs": logs, "message": message, "saving": saving,
+            "systemProxySummary": (try? SystemProxySnapshot(dictionary: SCDynamicStoreCopyProxies(nil) as? [String: Any] ?? [:]).summary) ?? "系统代理配置无效",
             "version": Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
         ]
         webView.callAsyncJavaScript("window.TunnelOne?.update(data)", arguments: ["data": data], in: nil, in: .page, completionHandler: nil)
@@ -185,7 +187,6 @@ final class TunnelOneViewController: NSViewController, TunnelEditViewControllerD
         case "new": handleAddEmptyTunnelAction()
         case "edit": handleEditTunnelAction()
         case "tunnel-menu": showTunnelMenu()
-        case "open-clash": openClash()
         case "system-logs": handleViewLogAction()
         case "install-extension": (NSApp.delegate as? AppDelegate)?.installNetworkExtension()
         case "remove-extension": (NSApp.delegate as? AppDelegate)?.removeNetworkExtension()
@@ -203,26 +204,18 @@ final class TunnelOneViewController: NSViewController, TunnelEditViewControllerD
             var settings = try tunnel.readProxySettings()
             settings.enabled = enabled
             settings.source = .external
-            settings.host = "127.0.0.1"
-            settings.port = 7890
+            settings.profileID = nil
             saving = true
             tunnel.saveProxySettings(settings) { [weak self] error in
                 DispatchQueue.main.async {
                     self?.saving = false
                     self?.message = error?.localizedDescription ?? ""
                     if error == nil { self?.beginReport(for: tunnel) }
-                    self?.addLog("\(tunnel.name)：\(error == nil ? (enabled ? "下次连接执行 Clash 安全启动" : "下次仅连接 WireGuard") : "代理偏好保存失败")")
+                    self?.addLog("\(tunnel.name)：\(error == nil ? (enabled ? "下次连接自动沿用系统代理" : "下次仅连接 WireGuard") : "代理偏好保存失败")")
                     self?.publish()
                 }
             }
         } catch { message = error.localizedDescription }
-    }
-
-    private func openClash() {
-        guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "party.mihomo.app") else {
-            message = "未找到 Clash Party，请先安装并配置已有客户端。"; return
-        }
-        NSWorkspace.shared.openApplication(at: url, configuration: .init())
     }
 
     @objc func handleToggleActiveStatusAction() {

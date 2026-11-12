@@ -11,7 +11,7 @@ final class ProxyRuntime {
     private var runtimeDirectory: URL?
 
     static func networkSettings(for settings: ProxySettings) -> NEProxySettings? {
-        guard settings.enabled else { return nil }
+        guard settings.enabled, settings.source == .builtIn else { return nil }
         let proxy = NEProxySettings()
         proxy.httpEnabled = true
         proxy.httpsEnabled = true
@@ -23,12 +23,16 @@ final class ProxyRuntime {
         return proxy
     }
 
-    /// External mode checks the existing Clash port before WireGuard starts.
-    /// Built-in mode launches its core after WireGuard installs its routes.
+    /// Only the optional built-in core uses a configured listening port.
+    /// Inherited system proxies use SystemProxyProbe instead.
     func start(_ settings: ProxySettings, profileData: Data?, uid: uid_t, gid: gid_t,
                interfaceName: String?, onUnexpectedExit: @escaping () -> Void,
                completion: @escaping (Error?) -> Void) {
         guard settings.enabled else { completion(nil); return }
+        guard settings.source == .builtIn else {
+            completion(SystemProxySafetyStart.Failure("系统代理必须经过自动检测流程。"))
+            return
+        }
         queue.async {
             self.generation += 1
             let generation = self.generation
@@ -77,10 +81,8 @@ final class ProxyRuntime {
     private func waitForPort(_ settings: ProxySettings, generation: Int, deadline: Date,
                              completion: @escaping (Error?) -> Void) {
         guard generation == self.generation else { return }
-        if Date() >= deadline || (settings.source == .builtIn && process?.isRunning != true) {
-            let message = settings.source == .external
-                ? "Clash 代理端口 \(settings.effectiveHost):\(settings.port) 未就绪，尚未启动 WireGuard。请确认 Clash Party 已启动且混合端口可连接。"
-                : "内置代理启动或端口检查失败，请检查配置与端口占用。"
+        if Date() >= deadline || process?.isRunning != true {
+            let message = "内置代理启动或端口检查失败，请检查配置与端口占用。"
             completion(NSError(domain: "TunnelOne.Proxy", code: 1, userInfo: [NSLocalizedDescriptionKey: message]))
             return
         }

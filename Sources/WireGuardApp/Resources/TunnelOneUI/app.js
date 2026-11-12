@@ -26,6 +26,7 @@
   function overview(t) {
     const report = t.report;
     const verified = t.status === 'active' && t.proxyEnabled && t.safetyMode && report?.result === 'connected-and-checked';
+    const withoutProxy = t.status === 'active' && report?.result === 'connected-without-proxy';
     const failed = ['failed', 'preflight-failed', 'rollback-failed'].includes(report?.result);
     let title = '隧道未连接', detail = '准备就绪，点击开启后自动处理网络与代理。', stateClass = '', glyph = 'shield';
     if (busy(t)) {
@@ -35,28 +36,27 @@
     } else if (t.status === 'active') {
       const checking = t.safetyMode && ['checking', 'rolling-back'].includes(report?.result);
       title = checking ? (report.result === 'rolling-back' ? '正在自动断开' : '正在验证连接') : verified ? '隧道与代理已连接' : 'WireGuard 已连接';
-      detail = checking ? report.stage : verified ? '国内直连与国外代理检查均通过。' : t.proxyEnabled ? '隧道已建立；本次安全启动检查尚未通过或未执行。' : '当前按 WireGuard 配置访问网络。';
-      stateClass = verified || !t.proxyEnabled ? 'good' : 'warn'; glyph = verified ? 'shield-check' : 'shield';
+      detail = checking ? report.stage : verified ? '已沿用系统代理，访问检查通过。' : withoutProxy ? '未启用系统代理，本次仅连接 WireGuard。' : t.proxyEnabled ? '隧道已建立；本次代理继承尚未验证。' : '当前按 WireGuard 配置访问网络。';
+      stateClass = verified || withoutProxy || !t.proxyEnabled ? 'good' : 'warn'; glyph = verified ? 'shield-check' : 'shield';
     } else if (failed) {
       title = '安全启动未完成'; detail = report.reason || '检查未通过。'; stateClass = 'warn'; glyph = 'shield-alert';
     }
     let html = `<div class="to-status-panel" aria-live="polite"><div class="to-status-icon ${stateClass}">${icon(glyph)}</div><div><div class="to-status-title">${title}</div><div class="to-status-detail">${esc(detail)}</div></div><div class="to-status-trailing"><span class="to-pill ${verified ? 'good' : ''}">${verified ? '连通检查通过' : esc(t.statusLabel)}</span></div></div>`;
     if (failed) html += `<div class="to-notice error" role="alert">${icon('circle-alert')}<div><strong>${esc(report.reason)}</strong><p>${esc(report.stage)}</p></div></div>`;
     const locked = t.status !== 'inactive' || t.onDemandEnabled || snapshot.saving;
-    const toggle = `<label class="to-switch"><input type="checkbox" role="switch" data-action="proxy-toggle" aria-label="连接时带入代理" ${t.proxyEnabled ? 'checked' : ''} ${locked ? 'disabled' : ''}><span aria-hidden="true"></span></label>`;
-    html += section(icon('shuffle') + '连接时带入代理', '为这个隧道单独设置，连接时自动生效。',
+    const toggle = `<label class="to-switch"><input type="checkbox" role="switch" data-action="proxy-toggle" aria-label="连接时沿用系统代理" ${t.proxyEnabled ? 'checked' : ''} ${locked ? 'disabled' : ''}><span aria-hidden="true"></span></label>`;
+    html += section(icon('shuffle') + '连接时沿用系统代理', '自动读取已启用的系统代理；没有代理时仅连接 WireGuard。',
       t.proxyEnabled && !t.safetyMode
-        ? `<div class="to-proxy-off">当前保留已有的内置 Mihomo 设置。关闭后重新打开此开关，将改用现有 Clash Party 的安全启动流程。</div>`
+        ? `<div class="to-proxy-off">当前保留已有的内置 Mihomo 设置。关闭后重新打开此开关，将改为自动沿用系统代理。</div>`
         : t.proxyEnabled
-        ? `<div class="to-profile-line"><div class="to-field"><span>使用代理配置</span><strong>${esc(t.proxySource)}</strong></div><button class="to-text-button" data-action="open-clash">打开 Clash Party</button></div>
-           <div class="to-connection-flow"><span class="to-flow-item">${icon('laptop')}应用</span>${icon('chevron-right')}<span class="to-flow-item on">${icon('shield')}WireGuard</span>${icon('chevron-right')}<span class="to-flow-item on">${icon('shuffle')}Clash 规则代理</span>${icon('chevron-right')}<span class="to-flow-item">${icon('globe')}互联网</span></div>
-           <div class="to-footnote">${icon('undo-2')}<span>按安全启动流程检查 Clash、同步隧道代理并验证国内外访问；失败自动断开本次隧道，保留原有 Clash 代理。</span></div>`
-        : `<div class="to-proxy-off">仅连接 WireGuard。打开此开关后，使用现有 Clash Party 执行安全启动流程。</div>`,
+        ? `<div class="to-profile-line"><div class="to-field"><span>${t.status === 'active' ? '本次代理' : '当前系统代理'}</span><strong>${esc(report?.proxySummary || snapshot.systemProxySummary || '连接时自动检测')}</strong></div></div>
+           <div class="to-footnote">${icon('shuffle')}<span>沿用当前代理客户端和规则，不启动指定软件。连接期间同步系统代理变化，失败时回滚本次隧道。</span></div>`
+        : `<div class="to-proxy-off">仅连接 WireGuard，不主动带入或同步系统代理。</div>`,
       toggle);
     if (locked) html += `<p class="to-footnote">请断开隧道并关闭按需连接后更改代理开关。</p>`;
     html += fields([['本地地址', t.address], ['服务器', t.endpoint], ['DNS 服务器', t.dns], ['路由范围', t.allowedIPs]]);
     if (t.status === 'active') html += `<dl class="to-metrics"><div><dt>已接收</dt><dd>${esc(t.rx || '—')}</dd></div><div><dt>已发送</dt><dd>${esc(t.tx || '—')}</dd></div><div><dt>上次握手</dt><dd>${esc(t.handshake || '尚未确认')}</dd></div></dl>`;
-    if (report?.checks?.length) html += section('连通性检查', '本次启动时的实际检查结果，不代表持续监控。', report.checks.map(check => `<div class="to-setting-row"><span>${esc(check.name)}</span><span class="to-pill ${check.ok ? 'good' : ''}">${check.ok ? '通过' : '失败'} · HTTP ${esc(check.http || '无响应')}</span></div>${!check.ok && check.detail ? `<p class="to-footnote">${esc(check.detail)}${check.exitCode != null ? ` · curl ${esc(check.exitCode)}` : ''}</p>` : ''}`).join(''));
+    if (report?.checks?.length) html += section('连通性检查', '最近一次连接或代理变更的实际检查结果，不代表持续监控。', report.checks.map(check => `<div class="to-setting-row"><span>${esc(check.name)}</span><span class="to-pill ${check.ok ? 'good' : ''}">${check.ok ? '通过' : '失败'} · HTTP ${esc(check.http || '无响应')}</span></div>${!check.ok && check.detail ? `<p class="to-footnote">${esc(check.detail)}${check.exitCode != null ? ` · curl ${esc(check.exitCode)}` : ''}</p>` : ''}`).join(''));
     return html;
   }
   function configuration(t) {
@@ -80,14 +80,15 @@
     return html + overview(t);
   }
   function proxyPage() {
-    return header('代理配置', '使用现有 Clash Party，连接时自动执行安全启动流程。', button('打开 Clash Party', 'open-clash')) +
-      section(icon('plug') + '本机代理 · Clash Party', '127.0.0.1:7890 · HTTP / HTTPS / SOCKS', `<ol class="to-step-list">
-        <li>确认系统代理开启、TUN 关闭、规则模式、混合端口 7890。</li>
-        <li>读取物理网络上的代理源，等待 Clash 端口就绪，再建立 WireGuard 隧道。</li>
-        <li>等待系统确认已连接并稳定 1 秒，再确认 IPv4 主路由、同步临时网络服务代理。</li>
-        <li>检查百度直连和 Google 代理访问，失败自动停止本次隧道。</li>
-      </ol><p class="to-footnote">在隧道概览中打开“连接时带入代理”，下次开启时自动执行。</p>`);
+    return header('代理配置', '自动沿用当前系统代理，兼容使用标准系统代理设置的客户端。') +
+      section(icon('plug') + '当前系统代理', '', `<p>${esc(snapshot.systemProxySummary || '连接时自动检测')}</p><ol class="to-step-list">
+        <li>连接前读取 HTTP、HTTPS、SOCKS、PAC 和绕过规则，验证现有代理可用。</li>
+        <li>建立 WireGuard 并将代理设置应用到本次隧道，再验证系统实际生效的访问路径。</li>
+        <li>没有系统代理时只连接 WireGuard；已配置但不可用时明确报错。</li>
+        <li>连接期间跟随网络服务的代理变化，不修改永久网络偏好或启动代理客户端。</li>
+      </ol><p class="to-footnote">系统代理仅影响遵循它的应用。仅 TUN / 其他 VPN 接管网络、WPAD 自动发现及需要额外认证的代理不保证自动兼容。</p>`);
   }
+
   function logsPage() {
     return header('连接日志', '显示实际连接状态与本次安全启动结果。', button('查看系统日志', 'system-logs')) +
       `<table class="to-table"><thead><tr><th>时间</th><th>事件</th></tr></thead><tbody>${snapshot.logs.length ? snapshot.logs.map(log => `<tr><td>${esc(log.time)}</td><td>${esc(log.message)}</td></tr>`).join('') : '<tr><td colspan="2">尚无运行记录。</td></tr>'}</tbody></table>`;

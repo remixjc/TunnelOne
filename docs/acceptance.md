@@ -1,5 +1,11 @@
 # 验收记录
 
+## v0.3.0 · 系统代理自动继承 · 2026-11-12
+
+本版移除指定客户端启动、私有配置与固定端口依赖，新增独立协议端口、PAC / SOCKS、无代理回退、内网隧道支持与来源变化同步。方案与兼容边界见 [系统代理继承](design/system-proxy-inheritance.md)。
+
+签名包实机验收结果将在安装验证后补充。
+
 ## v0.2.5 · 国内检查显式绕过系统代理 · 2026-11-12
 
 macOS 15+ 改用 Network.framework 的 TLS 连接，绑定本次 WireGuard virtualInterface，并设置 preferNoProxies。新增回归验证实际 TLS 参数同时包含指定接口、代理绕过和 TLS 协议。macOS 13/14 保留兼容 API，真实联网仍待验收。GitHub v0.2.5 标签流水线完成通用签名构建、Swift / Go / 沙盒 WebKit / 客户端 UI 测试及应用 / DMG 公证。下载签名 ZIP 后校验 SHA-256、Developer ID bundle 与公证票据，安装至 /Applications；系统确认为 0.2.5/9 activated enabled。

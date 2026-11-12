@@ -5,8 +5,10 @@ import Foundation
 public struct ProxySettings: Codable, Equatable {
     public enum Source: String, Codable { case builtIn, external }
     public static let configurationKey = "TunnelOneProxy"
-    public var enabled = false
+    public var enabled = true
     public var source: Source = .external
+    // Legacy serialized fields; used only by the optional built-in core.
+    // External mode reads protocols/endpoints from SystemProxySnapshot.
     public var host = "127.0.0.1"
     public var port = 7890
     public var bypass = ["localhost", "*.local", "127.0.0.1", "::1"]

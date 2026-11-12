@@ -237,6 +237,24 @@ public class WireGuardAdapter {
         }
     }
 
+    /// Change only this tunnel's proxy settings, serialized with path updates
+    /// and stop. Do not restart the WireGuard backend or rewrite preferences.
+    public func updateProxySettings(_ proxy: NEProxySettings?, completion: @escaping (WireGuardAdapterError?) -> Void) {
+        workQueue.async {
+            let generator: PacketTunnelSettingsGenerator
+            switch self.state {
+            case .started(_, let current), .temporaryShutdown(let current): generator = current
+            case .stopped: completion(.invalidState); return
+            }
+            self.proxySettings = proxy
+            do {
+                try self.setNetworkSettings(generator.generateNetworkSettings())
+                completion(nil)
+            } catch let error as WireGuardAdapterError { completion(error) }
+            catch { completion(.setNetworkSettings(error)) }
+        }
+    }
+
     /// Update runtime configuration.
     /// - Parameters:
     ///   - tunnelConfiguration: tunnel configuration.

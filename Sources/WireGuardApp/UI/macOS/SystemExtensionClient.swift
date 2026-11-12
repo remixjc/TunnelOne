@@ -71,7 +71,7 @@ enum SystemExtensionClient {
     static func requireSafetySupport(completion: @escaping (Error?) -> Void) {
         request({ service, reply in service.safetyReport(UUID().uuidString) { _ in reply(true, nil) } }) {
             (ready: Bool?, error) in
-            completion(ready == true && error == nil ? nil : ClashSafetyStart.Failure(
+            completion(ready == true && error == nil ? nil : SystemProxySafetyStart.Failure(
                 "新版网络扩展尚未就绪，尚未启动连接。请先完成 TunnelOne 网络扩展的安装 / 更新。"))
         }
     }

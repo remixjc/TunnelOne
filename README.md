@@ -16,13 +16,13 @@
   <img src="https://img.shields.io/badge/license-GPL--3.0-b7f7c1" alt="GPL-3.0">
 </p>
 
-TunnelOne 是面向 macOS 的 WireGuard 客户端。在 WireGuard 官方 Apple 客户端的基础上，为每个隧道增加「连接时带入代理」开关。关闭时只连接 WireGuard；开启时使用现有 Clash Party，执行安全启动 command 对应的检查、隧道代理同步、国内外联网验证和失败回滚。
+TunnelOne 是面向 macOS 的 WireGuard 客户端，为每个隧道提供「连接时沿用系统代理」设置。用户在任意代理客户端开启系统代理后，TunnelOne 自动读取当前配置，将其带入 WireGuard。连接时不启动代理客户端，不读取客户端私有配置，也不要求固定端口。
 
-**v0.2.1 更新：** 主窗口采用原型的侧栏、概览 / 隧道配置 / 按需连接标签页和代理开关布局；通过原生桥接操作真实的隧道管理器。默认代理来源改为本机 Clash Party 的 `127.0.0.1:7890`，不要求另行导入代理 YAML。真实联网验收状态及与 command 的对应关系见 [command 流程对照](docs/design/command-parity.md)。v0.2.0 的历史验收记录不能作为本次新安全启动流程的联网验收证明。
+**当前版本：v0.3.0 · Signed Beta（build 10）。** 支持独立的 HTTP / HTTPS / SOCKS 地址和端口、PAC 与绕过规则。没有系统代理时仅连接 WireGuard；已配置但无法访问时明确报错。连接期间监听来源网络服务的代理变化并更新本次隧道。新导入隧道默认启用自动沿用；保留已有隧道的开关设置和历史内置配置。实现与边界见[系统代理继承方案](docs/design/system-proxy-inheritance.md)，实际验收见[验收记录](docs/acceptance.md)。
 
-**当前版本：v0.2.5 · Signed Beta。** macOS 15+ 的国内检查使用 Network.framework 绑定本次 WireGuard 接口并显式绕过系统代理；国外检查继续走 Clash。macOS 13/14 保留兼容探测路径，真实联网仍待验收。保留 WebKit 空白窗口修复。使用 Developer ID 直接分发的系统扩展架构，提供签名、Apple 公证、staple、DMG 和 ZIP 自动发布流程。签名包使用 `-signed` 文件名；未签名包使用 `-preview` 文件名。实际公证和构建结果以对应 Release / Actions 为准。v0.2.0 曾在本机验证安装、系统扩展激活、WireGuard 实际握手及 Clash Party 代理访问；v0.2.5 已在本机验证新版系统扩展、完整安全启动、百度隧道内 HTTPS 200 与 Google Clash 代理 204；macOS 13/14、失败注入、内置代理、多用户、更新和卸载等验收仍需继续，当前按 Beta 发布。
+发布流水线提供 Apple Silicon / Intel 通用应用、Developer ID 签名、Apple 公证、staple、DMG 和 ZIP。请选择 Release 中的 `-signed` 安装包；`-preview` 仅供开发。当前仍按 Beta 发布。
 
-English: A native macOS WireGuard client with per-tunnel proxy preferences and a bundled Mihomo process. Uses a macOS System Extension with authenticated XPC configuration handoff and a per-user proxy process. Signed distributions require Developer ID profiles and successful Apple notarization; unsigned previews remain available for development. The current release is a beta pending device acceptance.
+English: A macOS WireGuard client that inherits the user's existing system proxy, independently of proxy client brand or port. Supports HTTP, HTTPS, SOCKS, PAC and bypass rules, with verification and updates scoped to the active tunnel. System Extension deployment uses Developer ID signing and Apple notarization.
 
 ## 为什么做 TunnelOne
 
@@ -32,45 +32,32 @@ TunnelOne 把代理偏好保存在各自的 VPN 配置中，由 Network Extensio
 
 ## 功能与实现范围
 
-| 功能 | v0.2.5 实现 |
+| 功能 | v0.3.0 实现 |
 | --- | --- |
 | WireGuard 隧道管理 | 基于官方 macOS 客户端：新建、导入 `.conf` / ZIP、编辑、启停、删除、导出 |
 | 多对端与运行信息 | 公钥、地址、DNS、MTU、AllowedIPs、Endpoint、保活、握手与收发统计 |
 | macOS 集成 | 原生 AppKit、菜单栏、Wi-Fi / 以太网按需连接、日志、用户钥匙串、系统扩展安装与移除 |
 | 进程与配置隔离 | XPC 每条消息校验签名，系统配置按 UID 隔离；Mihomo 以普通用户身份运行 |
-| 每隧道代理开关 | 默认关闭；与标准 `.conf` 分开保存，编辑隧道时保留代理偏好 |
-| 默认代理入口 | 使用现有 Clash Party；主窗口和菜单栏连接时尝试在后台打开客户端 |
-| 安全启动 | 检查 Clash 系统代理 / TUN / 模式 / 端口；确认路由及生效的 HTTP/HTTPS/SOCKS 代理；运行两项联网检查，失败回滚 |
+| 每隧道代理开关 | 新隧道默认自动沿用；保留已有偏好；与标准 `.conf` 分开保存 |
+| 默认代理入口 | 读取当前生效的系统代理，兼容标准系统代理客户端，不启动指定软件 |
+| 安全启动 | 连接前验证代理；系统 Connected 后同步临时代理并验证实际系统请求；失败回滚本次连接 |
 | 历史内置配置 | 保留旧配置的内置核心运行支持；主窗口不再引导导入 YAML 或选择新节点 |
 | 官网与原型 | 响应式静态官网、可交互模拟、独立设计原型、GitHub Pages 自动部署 |
 | 构建与发布 | Apple Silicon + Intel universal；ZIP、DMG、SHA-256；tag 触发签名、公证及 Beta 发布 |
 
-当前**没有**实现订阅 URL 管理、节点可视化选择、测速、应用内自动更新和独立的全应用 TUN 代理。节点、规则和订阅继续由已有 Clash Party 管理。原型内的数据与连接为模拟；应用窗口读取实际隧道状态、统计和扩展检查报告，不使用模拟结果。
+当前**没有**实现订阅 URL 管理、节点可视化选择、测速、应用内自动更新和独立的全应用 TUN 代理。节点、规则和订阅继续由用户选择的代理客户端管理。原型内的数据与连接为模拟；应用窗口读取实际隧道状态、统计和扩展检查报告，不使用模拟结果。
 
 ## 工作原理
 
-```text
-遵循系统代理的应用
-        │
-        ▼
-本机 HTTP/HTTPS mixed 端口
-        │
-        ▼
-Mihomo 规则：DIRECT 或代理节点
-        │
-        ▼
-WireGuard 实际 utun 接口 → WireGuard 服务器 → 目标 / 代理节点
-```
+1. 连接前读取当前生效的系统代理，分别保存 HTTP、HTTPS、SOCKS、PAC 和绕过规则。通过系统网络栈验证快照对应的访问规则。
+2. 启动用户选择的 WireGuard 隧道，优先通过 NEProxySettings 设置 HTTP / HTTPS / PAC。等待系统 Connected 与一秒稳定期后，定位属于本次接口的临时网络服务，将完整代理字典（含 SOCKS）同步到其 State。
+3. 核对实际生效的代理与快照一致，再通过默认系统代理规则请求 Google。全 IPv4 隧道同时执行绑定本次接口并绕过代理的百度 HTTPS 检查；仅内网隧道不强制接管公网路由。
+4. 监听物理网络服务的代理变化，更新本次隧道并重新验证；不把自身写入的 VPN 配置作为新来源。失败时断开本次 WireGuard，保留用户的来源代理。
+5. 断开时由系统撤销该隧道的临时网络设置，不向物理网络或永久 Setup 写回旧快照。
 
-1. 主应用从用户钥匙串读取 WireGuard 配置，经签名校验的 XPC 写入按 UID 隔离的系统快照；系统扩展从快照启动 WireGuardAdapter。
-2. 通过 `NEProxySettings` 为该隧道设置 HTTP/HTTPS 代理。网络变化后重新应用设置时仍保留代理。
-3. 内置模式在 WireGuard 安装路由后启动核心；使用 adapter 返回的实际 `utun` 接口约束核心出站，不依赖固定的 `utun4`。
-4. 导入 YAML 会保留节点与规则，但覆盖 TUN、DNS 监听、额外监听端口、控制 API、LAN 访问与网卡绑定，避免配置接管另一套路由。
-5. 代理监听通过 TCP 检查后完成启动；失败则停止内置核心与 WireGuard。断开时由系统撤销该隧道的网络设置，停止本次内置进程。
+系统代理仅影响遵循它的应用，不保证 UDP 或忽略系统代理的程序经过代理。代理客户端的节点出站仍受其自身接口绑定和 WireGuard AllowedIPs 影响，不保证所有节点连接都强制从 WireGuard 出口发出。仅 TUN / 其他 VPN、WPAD 和额外认证代理属于单独的兼容范围。
 
-「DIRECT」表示不经远端代理节点。内置模式仍绑定 WireGuard 接口出站。外部代理的节点、TUN、网卡绑定与出站策略由外部应用管理；使用 Clash Party 兼容模式时应关闭其 TUN。
-
-此开关只配置系统 **HTTP/HTTPS** 代理，不保证忽略系统代理的程序或 UDP 流量通过 Mihomo。WireGuard 的路由范围仍由 AllowedIPs 决定。TCP 端口就绪也不等同于已握手或目标网站可达。
+历史内置 Mihomo 模式继续保留，使用其独立的 YAML、端口和接口绑定设置；自动沿用系统代理不使用这些字段。
 
 ## 使用方法
 
@@ -78,11 +65,11 @@ WireGuard 实际 utun 接口 → WireGuard 服务器 → 目标 / 代理节点
 
 1. 把 signed 应用放到 `/Applications`，打开 TunnelOne，按系统提示允许网络扩展。
 2. 导入 WireGuard `.conf` 或 ZIP；首次连接允许系统添加 VPN 配置。
-3. 在 Clash Party 中保持「系统代理开启、TUN 关闭、规则模式、混合端口 7890」。
-4. 选中隧道，在概览打开「连接时带入代理」，然后点击「开启」。
-5. 应用检查物理网络代理，建立 WireGuard、同步隧道代理，并检查百度直连与 Google 代理访问。全部通过才保持连接，失败则停止本次隧道，保留原有 Clash。只需要 WireGuard 时关闭该开关。
+3. 在自己的代理客户端中启用系统代理并确认可以访问网络，使用其已有端口、节点与规则。
+4. 选中隧道，保留「连接时沿用系统代理」，然后点击「开启」。没有系统代理时会明确显示本次仅连接 WireGuard。
+5. 若代理已配置但不可用，应用显示实际失败原因；不要将连接失败当成代理已生效。
 
-修改代理开关前必须断开该隧道并暂时关闭按需连接。保存后下次连接生效。导入的 WireGuard 隧道默认关闭代理；标准 WireGuard 导出文件不包含代理偏好。已有内置模式设置会保留，关闭再打开主窗口的代理开关会改用 Clash Party。按需连接同样执行扩展内的安全检查，但需要 Clash Party 已在对应用户会话中运行。
+修改代理开关前需断开隧道并关闭按需连接；新导入隧道默认自动沿用，旧隧道保留原开关状态。标准 WireGuard 导出不包含代理偏好。历史内置模式可继续使用，关闭再开启主窗口开关会改为自动沿用。按需连接同样执行扩展内检查，依赖已有代理服务可用。
 
 `examples/proxy.yaml` 是不含节点凭据的 DIRECT 示例，只用于理解格式，不提供网络服务。代理 YAML 首先做 UTF-8 与大小检查，连接时再由 YAML 解析器和 Mihomo 校验。
 
@@ -154,8 +141,8 @@ bash scripts/build.sh --signed
 发布新版本（签名凭据齐全时自动公证）：
 
 ```bash
-git tag v0.2.5
-git push origin v0.2.5
+git tag v0.3.0
+git push origin v0.3.0
 ```
 
 后续版本先更新 `VERSION` 与 `project.yml`，添加 `docs/releases/<版本>.md`，再推送对应 tag。工作流拒绝版本不一致的发布，且不会把未签名预览标成正式版。签名版本默认仍为 Beta；完成真实设备验收后才将仓库变量 `RELEASE_CHANNEL` 改为 `stable`。

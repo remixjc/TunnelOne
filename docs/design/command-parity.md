@@ -1,4 +1,6 @@
-# v0.2.5 原型与安全启动 command 的实现对照
+# v0.2.1–v0.2.5 历史 command 对照
+
+> 此文记录旧版按本机脚本实现的历史。v0.3.0 已改为客户端无关的系统代理继承，当前行为以 [系统代理继承方案](system-proxy-inheritance.md) 为准；不再执行客户端配置读取、固定端口检查或打开 Clash Party。
 
 本次修订以用户指出的两个问题为范围：主窗口未按原型实现；开启后缺少 `local/legacy-tools/WireGuard与Clash安全启动.command` 中的实际操作。该 command 保持原样，作为行为对照。
 

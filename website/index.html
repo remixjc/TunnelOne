@@ -28,12 +28,12 @@
       <div class="hero-copy">
         <div class="eyebrow"><span class="live-dot"></span> BUILT FOR MACOS <span class="eyebrow-divider">/</span> OPEN SOURCE</div>
         <h1>一次连接，<br>网络<span class="mint">各就其位。</span></h1>
-        <p class="hero-description">WireGuard 负责隧道，Mihomo 负责代理。<br>打开一个客户端，就能让它们一起工作。</p>
+        <p class="hero-description">WireGuard 负责隧道，代理由你选择。<br>自动沿用已启用的系统代理，让它们一起工作。</p>
         <div class="hero-actions">
-          <a class="button primary" href="https://github.com/remixjc/TunnelOne/releases/tag/v0.2.5"><span aria-hidden="true">↓</span> 下载 Beta</a>
+          <a class="button primary" href="https://github.com/remixjc/TunnelOne/releases/tag/v0.3.0"><span aria-hidden="true">↓</span> 下载 Beta</a>
           <a class="button secondary" href="prototype.html">体验交互原型 <span aria-hidden="true">↗</span></a>
         </div>
-        <p class="download-note">v0.2.5 · macOS 13+ · Apple Silicon &amp; Intel</p>
+        <p class="download-note">v0.3.0 · macOS 13+ · Apple Silicon &amp; Intel</p>
         <div class="preview-note"><span class="tiny-tag">BETA</span><p>系统扩展架构，支持 Developer ID 签名与 Apple 公证发布。请选择 Release 中的 signed 安装包；实际联网及多用户验收仍在进行。<a href="https://github.com/remixjc/TunnelOne#开发与构建">查看构建说明 ↗</a></p></div>
       </div>
 
@@ -51,9 +51,9 @@
               <div class="demo-topline"><span>隧道概览</span><span class="chip">DEMO</span></div>
               <div id="connection-mark" class="connection-mark" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M24 5 39 11v12c0 9-9 16-15 20C18 39 9 32 9 23V11L24 5Z"/><path class="shield-tick" d="m17 24 5 5 10-11"/></svg></div>
               <h2 id="demo-title">准备好，即可出发</h2>
-              <p id="demo-status" class="demo-status" aria-live="polite">WireGuard 与代理将按你的设置启动</p>
+              <p id="demo-status" class="demo-status" aria-live="polite">WireGuard 将沿用你已启用的系统代理</p>
               <button class="connect-button" id="connect-button" type="button"><span aria-hidden="true">⏻</span> 连接隧道</button>
-              <div class="proxy-option"><div><strong>连接时带入代理</strong><span id="proxy-description">内置 Mihomo · 随隧道启停</span></div><button id="proxy-toggle" class="switch" role="switch" aria-checked="true" aria-label="连接时带入代理" type="button"><span></span></button></div>
+              <div class="proxy-option"><div><strong>连接时沿用系统代理</strong><span id="proxy-description">自动读取当前系统代理</span></div><button id="proxy-toggle" class="switch" role="switch" aria-checked="true" aria-label="连接时沿用系统代理" type="button"><span></span></button></div>
               <div class="route-diagram" aria-label="演示流量路径"><span>应用</span><i>→</i><span id="route-proxy">规则代理</span><i id="route-proxy-arrow">→</i><span>WireGuard</span><i>→</i><span>网络</span></div>
               <div class="demo-footer"><span><i></i> 配置仅保存在本机</span><span id="demo-state-tag">等待连接</span></div>
             </div>
@@ -63,15 +63,15 @@
       </div>
     </section>
 
-    <div class="principles section"><span>原生 macOS 体验</span><i>✳</i><span>每个隧道独立设置</span><i>✳</i><span>无需同时启动两个客户端</span><i>✳</i><span>源码公开</span></div>
+    <div class="principles section"><span>原生 macOS 体验</span><i>✳</i><span>每个隧道独立设置</span><i>✳</i><span>兼容已有系统代理</span><i>✳</i><span>源码公开</span></div>
 
     <section class="features section" id="features">
       <div class="section-heading"><div><p class="eyebrow">LESS SWITCHING. MORE FLOW.</p><h2>把复杂留给连接，<br>把简单留给你。</h2></div><p>保留熟悉的 WireGuard 工作方式，<br>再让代理自然地成为连接的一部分。</p></div>
       <div class="feature-grid">
         <article class="feature-card feature-wide"><div class="feature-number">01 / WIREGUARD</div><div class="feature-icon" aria-hidden="true">⌁</div><h3>隧道功能，完整保留。</h3><p>导入 .conf 或 ZIP、管理多个对端、查看握手和流量，在菜单栏快速连接。按需连接也遵循各隧道的代理设置。</p><div class="feature-tags"><span>配置编辑</span><span>按需连接</span><span>钥匙串存储</span><span>日志诊断</span></div></article>
-        <article class="feature-card"><div class="feature-number">02 / PROXY</div><div class="feature-icon" aria-hidden="true">⇄</div><h3>一个开关，决定同行。</h3><p>为每个隧道选择是否带入代理。使用内置 Mihomo，或连接已经运行的 Clash Party。</p><div class="small-toggle" aria-hidden="true"><span>WireGuard + Mihomo</span><i></i></div></article>
-        <article class="feature-card"><div class="feature-number">03 / LIFECYCLE</div><div class="feature-icon" aria-hidden="true">↻</div><h3>连接开始，也负责收尾。</h3><p>内置核心随隧道启停。代理启动失败便回滚隧道；核心异常退出时断开连接，并记录诊断事件。</p></article>
-        <article class="feature-card feature-wide architecture-card"><div class="feature-number">04 / ONE CLEAR PATH</div><h3>流量的去向，一目了然。</h3><div class="architecture-flow"><div><span>01</span><strong>应用请求</strong><small>遵循系统 HTTP/HTTPS 代理</small></div><b aria-hidden="true">→</b><div><span>02</span><strong>Mihomo 规则</strong><small>选择直连或代理节点</small></div><b aria-hidden="true">→</b><div><span>03</span><strong>WireGuard</strong><small>内置核心绑定隧道接口出站</small></div></div><p class="architecture-caption">仅开启 WireGuard 时遵循 AllowedIPs；开启代理后，直连规则仍通过内置核心绑定的 WireGuard 接口出站。</p></article>
+        <article class="feature-card"><div class="feature-number">02 / PROXY</div><div class="feature-icon" aria-hidden="true">⇄</div><h3>一个开关，决定同行。</h3><p>自动读取 HTTP、HTTPS、SOCKS、PAC 和绕过规则，不限定客户端或端口。没有系统代理时仅连接 WireGuard。</p><div class="small-toggle" aria-hidden="true"><span>WireGuard + 系统代理</span><i></i></div></article>
+        <article class="feature-card"><div class="feature-number">03 / LIFECYCLE</div><div class="feature-icon" aria-hidden="true">↻</div><h3>连接开始，也负责收尾。</h3><p>连接前后验证实际访问，连接期间跟随来源代理变化。验证失败回滚本次隧道，保留用户的系统代理。</p></article>
+        <article class="feature-card feature-wide architecture-card"><div class="feature-number">04 / ONE CLEAR PATH</div><h3>流量的去向，一目了然。</h3><div class="architecture-flow"><div><span>01</span><strong>应用请求</strong><small>遵循系统代理规则</small></div><b aria-hidden="true">→</b><div><span>02</span><strong>现有代理规则</strong><small>选择直连或代理节点</small></div><b aria-hidden="true">→</b><div><span>03</span><strong>WireGuard</strong><small>路由范围由 AllowedIPs 决定</small></div></div><p class="architecture-caption">WireGuard 与系统代理共同生效；代理客户端的节点出站仍受其接口绑定和路由规则影响。</p></article>
       </div>
     </section>
 
@@ -79,7 +79,7 @@
       <div class="section-heading"><div><p class="eyebrow">SET UP ONCE</p><h2>熟悉的配置，<br>更少的步骤。</h2></div><a class="text-link" href="https://github.com/remixjc/TunnelOne#使用方法">阅读完整使用指南 ↗</a></div>
       <div class="steps">
         <article><span class="step-number">01</span><h3>导入 WireGuard 隧道</h3><p>使用现有 .conf 或 ZIP 配置。你的标准配置继续保持兼容。</p></article>
-        <article><span class="step-number">02</span><h3>选择代理是否同行</h3><p>导入 Mihomo / Clash YAML，打开“连接时带入代理”，或填写本机代理端口。</p></article>
+        <article><span class="step-number">02</span><h3>选择代理是否同行</h3><p>在自己的客户端中启用系统代理，保留“连接时沿用系统代理”，无需填写端口或导入 YAML。</p></article>
         <article><span class="step-number">03</span><h3>连接，就绪</h3><p>将 signed 版本拖入应用程序，允许网络扩展与 VPN，再从窗口或菜单栏连接。</p></article>
       </div>
     </section>
@@ -87,15 +87,15 @@
     <section class="faq section" id="faq">
       <div><p class="eyebrow">GOOD TO KNOW</p><h2>开始前，<br>你可能想知道。</h2></div>
       <div class="faq-list">
-        <details><summary>现在可以直接安装后日常使用吗？<span>+</span></summary><p>v0.2.5 已采用 System Extension 架构，发布流水线支持签名、Apple 公证和通用架构 DMG。请选择 signed 安装包，并在系统设置允许网络扩展。当前仍为 Beta，真实联网、休眠恢复和多用户验收结果见项目测试清单；preview 包用于开发，不能代替签名版本。</p></details>
-        <details><summary>还需要单独运行 Clash Party 吗？<span>+</span></summary><p>内置模式包含 Mihomo 核心，导入 YAML 后随隧道启动，无需 Clash Party。外部代理模式则需要已有代理服务处于运行状态，其节点和出站策略由该服务管理。</p></details>
-        <details><summary>“带入代理”会代理所有应用吗？<span>+</span></summary><p>它通过隧道的系统 HTTP/HTTPS 代理设置工作，影响遵循系统代理的应用。忽略系统代理的程序、UDP 和游戏流量不在这一开关的保证范围内；WireGuard 路由仍由 AllowedIPs 决定。</p></details>
+        <details><summary>现在可以直接安装后日常使用吗？<span>+</span></summary><p>v0.3.0 已采用 System Extension 架构，发布流水线支持签名、Apple 公证和通用架构 DMG。请选择 signed 安装包，并在系统设置允许网络扩展。当前仍为 Beta，真实联网、休眠恢复和多用户验收结果见项目测试清单；preview 包用于开发，不能代替签名版本。</p></details>
+        <details><summary>可以使用其他代理客户端吗？<span>+</span></summary><p>可以使用提供标准 macOS 系统代理的客户端，包括 Clash Verge、Clash Party 等。代理服务需要已运行，TunnelOne 不启动指定软件。仅 TUN、WPAD 或额外认证代理需单独验证。</p></details>
+        <details><summary>“带入代理”会代理所有应用吗？<span>+</span></summary><p>它通过隧道的 HTTP、HTTPS、SOCKS 或 PAC 系统代理设置工作，影响遵循系统代理的应用。忽略系统代理的程序、UDP 和游戏流量不在这一开关的保证范围内；WireGuard 路由仍由 AllowedIPs 决定。</p></details>
         <details><summary>我的私钥和节点配置在哪里？<span>+</span></summary><p>WireGuard 私钥由系统钥匙串存储。代理 YAML 保存在本机 App Group 容器内，仅本地应用和扩展使用。项目没有账户或遥测服务。请将导出的隧道配置和代理 YAML 视作敏感数据。</p></details>
-        <details><summary>已经发布的原型等同于客户端吗？<span>+</span></summary><p>原型用于体验设计方向，全部连接与数据都是模拟。实际客户端采用原生 AppKit 界面；当前实现范围、开发限制和验收清单以仓库文档为准。</p></details>
+        <details><summary>已经发布的原型等同于客户端吗？<span>+</span></summary><p>原型用于体验设计方向，全部连接与数据都是模拟。实际客户端采用 AppKit 与本地 WebKit 界面；当前实现范围、开发限制和验收清单以仓库文档为准。</p></details>
       </div>
     </section>
 
-    <section class="final-cta section"><img src="assets/icon.svg" width="64" height="64" alt=""><p class="eyebrow">YOUR NETWORK. YOUR CHOICE.</p><h2>让下一次连接，<br>少一点折腾。</h2><div class="hero-actions"><a class="button primary" href="https://github.com/remixjc/TunnelOne/releases/tag/v0.2.5">下载 Beta <span aria-hidden="true">↓</span></a><a class="button secondary" href="https://github.com/remixjc/TunnelOne">查看源码 <span aria-hidden="true">↗</span></a></div></section>
+    <section class="final-cta section"><img src="assets/icon.svg" width="64" height="64" alt=""><p class="eyebrow">YOUR NETWORK. YOUR CHOICE.</p><h2>让下一次连接，<br>少一点折腾。</h2><div class="hero-actions"><a class="button primary" href="https://github.com/remixjc/TunnelOne/releases/tag/v0.3.0">下载 Beta <span aria-hidden="true">↓</span></a><a class="button secondary" href="https://github.com/remixjc/TunnelOne">查看源码 <span aria-hidden="true">↗</span></a></div></section>
   </main>
   <footer class="footer section"><a class="brand" href="./"><img src="assets/icon.svg" width="28" height="28" alt=""><strong>TunnelOne</strong></a><p>独立开源项目 · 基于 WireGuard 与 Mihomo<br>与 WireGuard LLC、MetaCubeX 无隶属关系。</p><div><a href="https://github.com/remixjc/TunnelOne/blob/main/LICENSE">GPL-3.0</a><a href="https://github.com/remixjc/TunnelOne/issues">反馈问题 ↗</a></div></footer>
 </body>

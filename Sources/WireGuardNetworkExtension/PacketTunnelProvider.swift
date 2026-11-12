@@ -16,6 +16,12 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
     private var ownerUID: uid_t?
     private var safetyReport = SafetyStartReport()
     private var safetyCancellation: SafetyCancellation?
+    private var proxyEnvironment: MacSystemProxySafetyEnvironment?
+    private var sourcePreparation: SystemProxySafetyStart.Preparation?
+    private var proxyChangeWork: DispatchWorkItem?
+    private var proxyUpdateInFlight = false
+    private var proxyUpdatePending = false
+    private var checkDefaultRoute = false
     private lazy var adapter: WireGuardAdapter = {
         WireGuardAdapter(with: self) { level, message in
             wg_log(level.osLogLevel, message: message)
@@ -52,7 +58,9 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
         ownerUID = uid
         SnapshotStore.shared.recordError(nil, identifier: id, uid: uid)
         let gid = account.pointee.pw_gid
-        let home = URL(fileURLWithPath: String(cString: account.pointee.pw_dir))
+        checkDefaultRoute = tunnel.peers.contains { peer in
+            peer.allowedIPs.contains { $0.stringRepresentation == "0.0.0.0/0" }
+        }
         let proxy = snapshot.proxy
         safetyCancellation?.cancel()
         let cancellation = SafetyCancellation()
@@ -63,34 +71,26 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
             saveSafetyReport()
             DispatchQueue.global(qos: .utility).async {
                 do {
-                    guard proxy.host == "127.0.0.1", proxy.port == 7890 else {
-                        throw ClashSafetyStart.Failure("安全启动使用 Clash Party 的本机混合端口 127.0.0.1:7890。")
-                    }
-                    let policy = ClashSafetyStart(environment: MacClashSafetyEnvironment(home: home,
+                    let environment = MacSystemProxySafetyEnvironment(
                         performActiveMutation: { try cancellation.performActiveMutation($0) },
-                        directProbe: {
+                        isCancelled: { cancellation.isCancelled }, directProbe: {
                             TunnelConnectivityProbe.run(provider: self, isCancelled: { cancellation.isCancelled })
-                        }))
-                    let preparation = try policy.prepare()
+                        })
+                    let policy = SystemProxySafetyStart(environment: environment)
+                    let initial = try policy.prepare()
+                    let preparation = SystemProxySafetyStart.Preparation(sourceService: initial.sourceService,
+                        sourceInterface: initial.sourceInterface, proxy: initial.proxy,
+                        observedSource: try environment.sourceProxy(service: initial.sourceService))
                     DispatchQueue.main.async {
                         guard generation == self.generation, !cancellation.isCancelled else { return }
-                        self.safetyReport.stage = "等待 Clash 代理端口就绪"
+                        self.proxyEnvironment = environment
+                        self.sourcePreparation = preparation
+                        self.safetyReport.proxySummary = preparation.proxy.summary
+                        self.safetyReport.proxyApplied = preparation.proxy.hasProxy
+                        self.safetyReport.stage = "启动 WireGuard"
                         self.saveSafetyReport()
-                        // External Clash must be listening before WireGuard changes routes.
-                        self.proxyRuntime.start(proxy, profileData: nil, uid: uid, gid: gid,
-                                                interfaceName: nil, onUnexpectedExit: {}) { error in
-                            DispatchQueue.main.async {
-                                guard generation == self.generation, !cancellation.isCancelled else { return }
-                                if let error = error {
-                                    self.failSafetyPreflight(error)
-                                    return
-                                }
-                                self.safetyReport.stage = "启动 WireGuard"
-                                self.saveSafetyReport()
-                                self.startAdapter(tunnel, snapshot: snapshot, uid: uid, gid: gid,
-                                                  generation: generation, policy: policy, preparation: preparation)
-                            }
-                        }
+                        self.startAdapter(tunnel, snapshot: snapshot, uid: uid, gid: gid,
+                                          generation: generation, policy: policy, preparation: preparation)
                     }
                 } catch {
                     DispatchQueue.main.async {
@@ -108,9 +108,10 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
 
     private func startAdapter(_ tunnel: TunnelConfiguration, snapshot: SystemExtensionConfiguration,
                               uid: uid_t, gid: gid_t, generation: Int,
-                              policy: ClashSafetyStart? = nil, preparation: ClashSafetyStart.Preparation? = nil) {
+                              policy: SystemProxySafetyStart? = nil, preparation: SystemProxySafetyStart.Preparation? = nil) {
         let proxy = snapshot.proxy
-        adapter.proxySettings = ProxyRuntime.networkSettings(for: proxy)
+        if let preparation = preparation { adapter.proxySettings = SystemProxyNetworkSettings.make(preparation.proxy) }
+        else { adapter.proxySettings = ProxyRuntime.networkSettings(for: proxy) }
         adapter.start(tunnelConfiguration: tunnel) { adapterError in
             DispatchQueue.main.async {
                 guard generation == self.generation else { return }
@@ -174,12 +175,13 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
         finishStart(error)
     }
 
-    private func verifySafety(_ policy: ClashSafetyStart, preparation: ClashSafetyStart.Preparation, generation: Int) {
+    private func verifySafety(_ policy: SystemProxySafetyStart, preparation: SystemProxySafetyStart.Preparation, generation: Int) {
         let interface = adapter.interfaceName ?? ""
+        let checkDirect = checkDefaultRoute
         guard let cancellation = safetyCancellation else { return }
         DispatchQueue.global(qos: .utility).async {
             do {
-                let report = try policy.verify(preparation, interface: interface,
+                let report = try policy.verify(preparation, interface: interface, checkDirect: checkDirect,
                                                isCancelled: { cancellation.isCancelled }, progress: { stage in
                     DispatchQueue.main.async {
                         guard generation == self.generation else { return }
@@ -193,12 +195,21 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
                     report.time = self.safetyReport.time
                     report.activationAttemptID = self.safetyReport.activationAttemptID
                     self.safetyReport = report
-                    if report.result == "connected-and-checked" {
-                        self.proxyReady = true
+                    if ["connected-and-checked", "connected-without-proxy"].contains(report.result) {
+                        self.proxyReady = report.proxyApplied == true
+                        do {
+                            try self.proxyEnvironment?.observeChanges { [weak self] in self?.scheduleProxyRefresh() }
+                        } catch {
+                            self.rollbackSafety(error, generation: generation)
+                            return
+                        }
                         self.saveSafetyReport()
-                        wg_log(.info, staticMessage: "Clash settings, WireGuard route, effective HTTP/HTTPS/SOCKS proxies and both connectivity probes passed")
+                        // Reconcile changes that happened while the initial
+                        // network checks ran, before the observer was installed.
+                        self.scheduleProxyRefresh()
+                        wg_log(.info, staticMessage: "WireGuard and inherited system proxy verification completed")
                     } else {
-                        self.rollbackSafety(ClashSafetyStart.Failure(report.reason ?? "连通检查失败。"),
+                        self.rollbackSafety(SystemProxySafetyStart.Failure(report.reason ?? "连通检查失败。"),
                                             generation: generation)
                     }
                 }
@@ -211,7 +222,103 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
         }
     }
 
+    private func stopProxyObservation() {
+        proxyChangeWork?.cancel()
+        proxyChangeWork = nil
+        proxyEnvironment?.stopObserving()
+        sourcePreparation = nil
+        proxyUpdateInFlight = false
+        proxyUpdatePending = false
+    }
+
+    private func scheduleProxyRefresh() {
+        guard sourcePreparation != nil, safetyCancellation?.isCancelled == false else { return }
+        if proxyUpdateInFlight { proxyUpdatePending = true; return }
+        proxyChangeWork?.cancel()
+        let work = DispatchWorkItem { [weak self] in self?.refreshProxySource() }
+        proxyChangeWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.75, execute: work)
+    }
+
+    private func finishProxyRefresh() {
+        proxyUpdateInFlight = false
+        if proxyUpdatePending { proxyUpdatePending = false; scheduleProxyRefresh() }
+    }
+
+    private func refreshProxySource() {
+        guard let environment = proxyEnvironment, let previous = sourcePreparation,
+              let cancellation = safetyCancellation, !cancellation.isCancelled else { return }
+        let generation = self.generation
+        proxyUpdateInFlight = true
+        DispatchQueue.global(qos: .utility).async {
+            do {
+                let candidate = try environment.refreshedSource(previous)
+                guard !cancellation.isCancelled else { return }
+                if candidate.proxy == previous.proxy,
+                   (try? SystemProxySnapshot(dictionary: environment.effectiveProxy())) == candidate.proxy {
+                    DispatchQueue.main.async {
+                        guard generation == self.generation else { return }
+                        self.sourcePreparation = candidate
+                        self.finishProxyRefresh()
+                    }
+                    return
+                }
+                if candidate.proxy.hasProxy {
+                    let check = try environment.probe(snapshot: candidate.proxy, useSystem: false)
+                    guard check.ok else { throw SystemProxySafetyStart.Failure("更新后的系统代理不可用：" + check.failureDescription) }
+                }
+                DispatchQueue.main.async {
+                    guard generation == self.generation, !cancellation.isCancelled else { return }
+                    self.safetyReport.result = "checking"
+                    self.safetyReport.stage = "系统代理已变化，正在更新本次隧道"
+                    self.saveSafetyReport()
+                    self.adapter.updateProxySettings(SystemProxyNetworkSettings.make(candidate.proxy)) { error in
+                        DispatchQueue.main.async {
+                            guard generation == self.generation, !cancellation.isCancelled else { return }
+                            if let error = error { self.rollbackSafety(error, generation: generation); return }
+                            let interface = self.adapter.interfaceName ?? ""
+                            DispatchQueue.global(qos: .utility).async {
+                                do {
+                                    let policy = SystemProxySafetyStart(environment: environment)
+                                    let updated = try policy.verify(candidate, interface: interface, checkDirect: false,
+                                                                    isCancelled: { cancellation.isCancelled })
+                                    DispatchQueue.main.async {
+                                        guard generation == self.generation, !cancellation.isCancelled else { return }
+                                        var report = updated
+                                        report.activationAttemptID = self.safetyReport.activationAttemptID
+                                        self.safetyReport = report
+                                        if report.result == "failed" {
+                                            self.rollbackSafety(SystemProxySafetyStart.Failure(report.reason ?? "系统代理更新验证失败。"), generation: generation)
+                                            return
+                                        }
+                                        self.sourcePreparation = candidate
+                                        self.proxyReady = candidate.proxy.hasProxy
+                                        self.saveSafetyReport()
+                                        self.finishProxyRefresh()
+                                    }
+                                } catch {
+                                    DispatchQueue.main.async {
+                                        guard generation == self.generation else { return }
+                                        self.rollbackSafety(error, generation: generation)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    guard generation == self.generation else { return }
+                    if error is MacSystemProxySafetyEnvironment.NetworkUnavailable {
+                        self.finishProxyRefresh() // The next network notification retries after recovery.
+                    } else { self.rollbackSafety(error, generation: generation) }
+                }
+            }
+        }
+    }
+
     private func rollbackSafety(_ error: Error, generation: Int) {
+        stopProxyObservation()
         safetyCancellation?.cancel()
         proxyReady = false
         let wasStarting = pendingStart != nil
@@ -224,7 +331,7 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
         adapter.stop { adapterError in
             DispatchQueue.main.async {
                 guard generation == self.generation else { return }
-                self.safetyReport.stage = adapterError == nil ? "已自动断开本次 WireGuard，保留原有 Clash 代理" : "自动断开失败，请手动断开 WireGuard"
+                self.safetyReport.stage = adapterError == nil ? "已自动断开本次 WireGuard，保留原有系统代理" : "自动断开失败，请手动断开 WireGuard"
                 self.safetyReport.result = adapterError == nil ? "failed" : "rollback-failed"
                 self.saveSafetyReport()
                 if wasStarting {
@@ -275,6 +382,7 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
     override func stopTunnel(with reason: NEProviderStopReason, completionHandler: @escaping () -> Void) {
         DispatchQueue.main.async {
             self.generation += 1
+            self.stopProxyObservation()
             self.safetyCancellation?.cancel()
             self.proxyReady = false
             if ["checking", "rolling-back"].contains(self.safetyReport.result) {

@@ -22,15 +22,18 @@ const { chromium } = require('playwright');
     await page.goto(pathToFileURL(path.resolve('Sources/WireGuardApp/Resources/TunnelOneUI/index.html')).href);
     const tunnel = {
       id: 'home', name: 'macmini152-client', status: 'inactive', statusLabel: '未连接',
-      proxyEnabled: true, safetyMode: true, proxySource: '本机代理 · Clash Party',
+      proxyEnabled: true, safetyMode: true, proxySource: '自动沿用系统代理',
       address: '10.8.0.2/24', dns: '114.114.114.114, 1.1.1.1',
       endpoint: 'vpn.example.com:51820', allowedIPs: '0.0.0.0/0',
       publicKey: 'UI_TEST_PUBLIC_KEY', mtu: '1420', peers: [],
       onDemandEnabled: false, onDemandDescription: '未配置',
     };
-    const data = { tunnels: [tunnel], logs: [], message: '', version: '0.2.5', saving: false };
+    const data = { tunnels: [tunnel], logs: [], message: '', version: '0.3.0', saving: false,
+      systemProxySummary: 'HTTPS 127.0.0.1:7897 · SOCKS 127.0.0.1:1080' };
     const update = () => page.evaluate(value => window.TunnelOne.update(value), data);
     await update();
+    assert.match(await page.locator('main').innerText(), /HTTPS 127.0.0.1:7897/);
+    assert.equal(await page.getByRole('switch').getAttribute('aria-label'), '连接时沿用系统代理');
     assert.equal(await page.locator('.to-sidebar').evaluate(el => el.getBoundingClientRect().width), 208);
     await page.getByRole('button', { name: '开启', exact: true }).click();
     assert.equal((await page.evaluate(() => window.nativeMessages)).at(-1).action, 'connect');
@@ -64,13 +67,20 @@ const { chromium } = require('playwright');
     fs.mkdirSync('build/ui-qa', { recursive: true });
     await page.screenshot({ path: 'build/ui-qa/client-connected.png' });
 
+    tunnel.report = { time: 'fixture-no-proxy', stage: 'WireGuard 已连接，未启用系统代理',
+      result: 'connected-without-proxy', proxyApplied: false, proxySummary: '未启用系统代理', checks: [] };
+    await update();
+    assert.equal(await page.locator('.to-status-title').innerText(), 'WireGuard 已连接');
+    assert.match(await page.locator('.to-status-detail').innerText(), /未启用系统代理/);
+    assert.equal(await page.getByText('隧道与代理已连接').count(), 0);
+
     tunnel.proxyEnabled = false;
     await update();
     assert.equal(await page.locator('.to-status-title').innerText(), 'WireGuard 已连接');
     assert.equal(await page.getByText('国内直连与国外代理检查均通过。').count(), 0);
     tunnel.proxyEnabled = true;
     tunnel.status = 'inactive'; tunnel.statusLabel = '未连接';
-    tunnel.report = { time: 'fixture', stage: '已自动断开本次 WireGuard，保留原有 Clash 代理',
+    tunnel.report = { time: 'fixture', stage: '已自动断开本次 WireGuard，保留原有系统代理',
       result: 'failed', reason: '国外代理连通检查失败', checks: [
         { name: '国外代理', ok: false, http: '000', exitCode: 7, detail: 'curl: (7) Failed to connect' }
       ] };
@@ -83,6 +93,8 @@ const { chromium } = require('playwright');
     assert.match(await page.locator('.to-table').innerText(), /尚无运行记录/);
     await page.getByRole('button', { name: '代理配置', exact: true }).click();
     assert.equal(await page.getByText('内置代理', { exact: true }).count(), 0);
+    assert.match(await page.locator('main').innerText(), /PAC.*绕过规则/);
+    assert.equal(await page.getByText('Clash Party').count(), 0);
 
     tunnel.name = '<img src=x onerror="window.injected=true">';
     await update();

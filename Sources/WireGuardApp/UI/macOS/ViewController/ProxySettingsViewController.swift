@@ -7,7 +7,7 @@ final class ProxySettingsViewController: NSViewController {
     private var settings: ProxySettings
     private var pendingProfile: Data?
     private let onSave: () -> Void
-    private let enabled = NSButton(checkboxWithTitle: "连接时带入代理", target: nil, action: nil)
+    private let enabled = NSButton(checkboxWithTitle: "连接时沿用系统代理", target: nil, action: nil)
     private let source = NSPopUpButton()
     private let host = NSTextField()
     private let port = NSTextField()
@@ -30,10 +30,10 @@ final class ProxySettingsViewController: NSViewController {
         let title = NSTextField(labelWithString: "隧道与代理，一次连接")
         title.font = .systemFont(ofSize: 22, weight: .semibold)
         let detail = NSTextField(wrappingLabelWithString:
-            "为「\(tunnel.name)」单独设置。内置 Mihomo 随隧道启停；本机代理可连接已运行的 Clash Party。")
+            "为「\(tunnel.name)」单独设置。内置 Mihomo 随隧道启停；外部模式自动读取当前系统代理，无需指定客户端或端口。")
         detail.textColor = .secondaryLabelColor
         enabled.state = settings.enabled ? .on : .off
-        source.addItems(withTitles: ["内置 Mihomo", "本机 / 外部 HTTP 代理"])
+        source.addItems(withTitles: ["内置 Mihomo", "自动沿用系统代理"])
         source.selectItem(at: settings.source == .builtIn ? 0 : 1)
         source.target = self
         source.action = #selector(sourceChanged)
@@ -93,7 +93,9 @@ final class ProxySettingsViewController: NSViewController {
     }
 
     @objc private func sourceChanged() {
-        host.isEnabled = source.indexOfSelectedItem == 1
+        host.isEnabled = false
+        port.isEnabled = source.indexOfSelectedItem == 0
+        bypass.isEnabled = source.indexOfSelectedItem == 0
         if source.indexOfSelectedItem == 0 { host.stringValue = "127.0.0.1" }
     }
 
@@ -129,11 +131,13 @@ final class ProxySettingsViewController: NSViewController {
         do {
             settings.enabled = enabled.state == .on
             settings.source = source.indexOfSelectedItem == 0 ? .builtIn : .external
-            settings.host = host.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
-            settings.port = Int(port.stringValue) ?? 0
-            settings.bypass = bypass.stringValue.split(separator: ",").map {
-                $0.trimmingCharacters(in: .whitespacesAndNewlines)
-            }.filter { !$0.isEmpty }
+            if settings.source == .builtIn {
+                settings.host = "127.0.0.1"
+                settings.port = Int(port.stringValue) ?? 0
+                settings.bypass = bypass.stringValue.split(separator: ",").map {
+                    $0.trimmingCharacters(in: .whitespacesAndNewlines)
+                }.filter { !$0.isEmpty }
+            }
             try settings.validate()
             if let data = pendingProfile, let id = settings.profileID {
                 try ProxyProfileStore.write(data, id: id)

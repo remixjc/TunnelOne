@@ -35,7 +35,7 @@ final class Smoke {
     func verifyPage() {
         let tunnel: [String: Any] = [
             "id": "fixture", "name": "Native sandbox test", "status": "inactive", "statusLabel": "未连接",
-            "proxyEnabled": true, "safetyMode": true, "proxySource": "本机代理 · Clash Party",
+            "proxyEnabled": true, "safetyMode": true, "proxySource": "自动沿用系统代理",
             "peers": [], "onDemandEnabled": false
         ]
         let payload: [String: Any] = [

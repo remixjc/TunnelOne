@@ -420,7 +420,7 @@ extension TunnelDetailTableViewController: NSTableViewDelegate {
             let cell: ButtonRow = tableView.dequeueReusableCell()
             let settings = try? tunnel.readProxySettings()
             if let settings = settings {
-                cell.buttonTitle = settings.enabled ? "代理已开启 · \(settings.source == .builtIn ? "内置 Mihomo" : "外部代理") · 设置…" : "连接时带入代理：关闭 · 设置…"
+                cell.buttonTitle = settings.enabled ? "代理已开启 · \(settings.source == .builtIn ? "内置 Mihomo" : "沿用系统代理") · 设置…" : "连接时沿用系统代理：关闭 · 设置…"
             } else {
                 cell.buttonTitle = "代理配置无效 · 重新设置…"
             }

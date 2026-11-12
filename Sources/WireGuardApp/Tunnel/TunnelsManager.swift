@@ -504,14 +504,6 @@ class TunnelsManager {
         #if targetEnvironment(simulator)
         tunnel.status = .active
         #else
-        #if os(macOS)
-        if let settings = try? tunnel.readProxySettings(), settings.enabled, settings.source == .external,
-           let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "party.mihomo.app") {
-            let configuration = NSWorkspace.OpenConfiguration()
-            configuration.activates = false
-            NSWorkspace.shared.openApplication(at: url, configuration: configuration)
-        }
-        #endif
         tunnel.startActivation(activationDelegate: activationDelegate)
         #endif
 

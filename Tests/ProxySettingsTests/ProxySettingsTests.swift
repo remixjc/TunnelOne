@@ -2,8 +2,10 @@ import XCTest
 @testable import TunnelOnePolicy
 
 final class ProxySettingsTests: XCTestCase {
-    func testNewImportDoesNotEnableProxy() throws {
-        XCTAssertFalse(try ProxySettings.decode(nil).enabled)
+    func testNewImportRequestsAutomaticSystemProxyInheritance() throws {
+        let settings = try ProxySettings.decode(nil)
+        XCTAssertTrue(settings.enabled)
+        XCTAssertEqual(settings.source, .external)
     }
 
     func testEnabledBuiltInRequiresProfile() {
