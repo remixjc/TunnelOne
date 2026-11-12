@@ -15,14 +15,22 @@
 
 CI 会在签名检查后对 app 和 DMG 分别请求 Apple 公证、staple 并验证，再上传 ZIP / DMG / SHA-256 / 对应源码。**每次实际构建结果以该 commit 的 Actions 和 Release 为准。** 自动测试中的 UID 隔离属于文件存储单元测试，不代表真实多用户登录测试已通过。
 
-### 真实设备验收：待完成
+### 发布与本机验收：部分通过
 
-本轮执行期间 Mac 处于锁屏状态。尚未在已解锁桌面完成系统扩展授权及以下联网验证：
+2026-11-12 的 v0.2.0 tag 流水线 [43144183905](https://github.com/remixjc/TunnelOne/actions/runs/43144183905) 已成功。Apple 分别接受 app 和 DMG 公证，staple / validate 均通过，已发布 Signed Beta。下载发布 ZIP 后，其 SHA-256 与 `SHA256SUMS.txt` 一致；本机 bundle 签名检查和公证票据校验通过，`spctl` 返回 accepted / Notarized Developer ID。本机同时显示 `override=security disabled`，因此该机器的 Gatekeeper 评估不能代表默认安全设置下的新设备验收；本轮未修改系统安全设置。
 
-- [ ] signed 应用复制到 `/Applications`，允许系统扩展与 VPN 权限。
+设备用户随后导入并连接了隧道，并启用外部 Clash Party 代理。观察到实际握手与双向数据，系统只保留 TunnelOne 的 VPN 连接；原 WireGuard VPN 已断开。查询 1.1.1.1 的路由指向 `utun4`，当前 HTTP / HTTPS 代理为 `127.0.0.1:7890`。本机直连百度 HTTPS、经代理访问 Google 和 GitHub 均返回 HTTP 200。该结果证明本轮 WireGuard 与外部代理共存可用；尚未独立核对每条 Clash 节点连接的实际出口路径。
+
+- [x] 发布成品安装到 `/Applications`，系统扩展为 activated enabled，客户端成功启动。
+- [x] 实际隧道导入、配置跨 XPC 保存、VPN 授权和连接；近期握手、发送 / 接收流量可见。
+- [x] 外部 Clash Party：HTTP / HTTPS 系统代理生效，国内直连和国外代理访问成功。
+
+### 仍需继续验收
+
+- [ ] 在保持默认 Gatekeeper 安全设置的新设备上安装已公证成品。
 - [ ] 导入 / 编辑 / 复制 / 删除 / 导出；保存失败后原配置仍可使用。
 - [ ] 代理关闭：WireGuard 实际握手、路由、DNS、IPv4 / IPv6。
-- [ ] 外部 Clash Party 代理：端口可达、系统代理生效、国内外访问；不可达时回滚。
+- [ ] 外部 Clash Party 不可达时的真实回滚；核对各节点连接的实际出口路径。
 - [ ] 内置代理：启动器和 Mihomo 确认为普通用户 UID / GID；绑定实际 utun，验证出口路径。
 - [ ] 应用关闭或用户钥匙串锁定后按需连接仍能读取系统快照。
 - [ ] 错误 YAML、规则下载失败、端口占用、快速启停和启动取消。

@@ -18,7 +18,7 @@
 
 TunnelOne 是面向 macOS 的原生 WireGuard 客户端。在 WireGuard 官方 Apple 客户端的基础上，为每个隧道增加「连接时带入代理」开关：只连接隧道，或同时启动内置 Mihomo，并把 HTTP/HTTPS 代理应用到该隧道的网络设置中。
 
-**当前版本：v0.2.0 · System Extension Beta。** 已改为 Developer ID 直接分发使用的系统扩展架构，提供签名、Apple 公证、staple、DMG 和 ZIP 自动发布流程。签名包使用 `-signed` 文件名；未签名包使用 `-preview` 文件名。实际公证和构建结果以对应 Release / Actions 为准。真实 VPN、多用户、更新和卸载验收仍需在签名版本中完成，当前按 Beta 发布。
+**当前版本：v0.2.0 · System Extension Beta。** 已改为 Developer ID 直接分发使用的系统扩展架构，提供签名、Apple 公证、staple、DMG 和 ZIP 自动发布流程。签名包使用 `-signed` 文件名；未签名包使用 `-preview` 文件名。实际公证和构建结果以对应 Release / Actions 为准。本机已验证安装、系统扩展激活、WireGuard 实际握手及 Clash Party 代理访问；内置代理、多用户、更新和卸载等验收仍需继续，当前按 Beta 发布。
 
 English: A native macOS WireGuard client with per-tunnel proxy preferences and a bundled Mihomo process. Uses a macOS System Extension with authenticated XPC configuration handoff and a per-user proxy process. Signed distributions require Developer ID profiles and successful Apple notarization; unsigned previews remain available for development. The current release is a beta pending device acceptance.
 
