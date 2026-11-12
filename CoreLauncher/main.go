@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Runs the unmodified Mihomo executable under the extension's inherited sandbox.
+// Supervises Mihomo as the owning GUI user. Never parse profiles or run a proxy as root.
 package main
 
 import (
@@ -82,7 +82,31 @@ func run() error {
 	port := flag.Int("port", 17890, "loopback mixed port")
 	tunnelInterface := flag.String("interface", "", "WireGuard utun interface")
 	check := flag.Bool("check", false, "validate profile syntax without starting")
+	uid := flag.Int("uid", os.Getuid(), "owning user's UID")
+	gid := flag.Int("gid", os.Getgid(), "owning user's primary GID")
+	worker := flag.Bool("worker", false, "internal unprivileged worker")
 	flag.Parse()
+	if os.Geteuid() == 0 {
+		if *worker || *uid < 501 || *uid >= 2147483647 || *gid < 0 || *gid >= 2147483647 {
+			return errors.New("unprivileged owner required")
+		}
+		executable, err := os.Executable()
+		if err != nil {
+			return err
+		}
+		// Credential switching happens in fork/exec, before the child Go runtime.
+		// The root supervisor never opens any caller-writable profile or path.
+		child := exec.Command(executable, append(os.Args[1:], "-worker")...)
+		child.SysProcAttr = &syscall.SysProcAttr{Credential: &syscall.Credential{
+			Uid: uint32(*uid), Gid: uint32(*gid), Groups: []uint32{uint32(*gid)},
+		}}
+		child.Dir = "/"
+		child.Env = []string{"PATH=/usr/bin:/bin", "HOME=" + *directory, "TMPDIR=" + *directory}
+		return supervise(child)
+	}
+	if *uid != os.Geteuid() || *gid != os.Getegid() {
+		return errors.New("owner does not match process credentials")
+	}
 	data, err := os.ReadFile(*profilePath)
 	if err != nil {
 		return errors.New("cannot read profile")
@@ -109,9 +133,14 @@ func run() error {
 	}
 	defer os.Remove(configPath)
 	cmd := exec.Command(*core, "-d", *directory, "-f", configPath)
+	cmd.Dir = *directory
+	return supervise(cmd)
+}
+
+func supervise(cmd *exec.Cmd) error {
 	// Do not expose node credentials or remote subscription URLs in diagnostics.
 	if err := cmd.Start(); err != nil {
-		return errors.New("cannot start bundled core")
+		return errors.New("cannot start supervised process")
 	}
 	done := make(chan error, 1)
 	go func() { done <- cmd.Wait() }()

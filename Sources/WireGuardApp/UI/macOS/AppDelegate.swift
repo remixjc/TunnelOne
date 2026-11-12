@@ -35,6 +35,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         NSApp.mainMenu = MainMenu()
+        DispatchQueue.main.async { SystemExtensionController.shared.activate() }
         setDockIconAndMainMenuVisibility(isVisible: !isLaunchedAtLogin)
 
         TunnelsManager.create { [weak self] result in
@@ -188,6 +189,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 }
 
 extension AppDelegate {
+    @objc func installNetworkExtension() { SystemExtensionController.shared.activate() }
+
+    @objc func removeNetworkExtension() {
+        guard tunnelsManager?.numberOfTunnels() == 0 else {
+            let alert = NSAlert()
+            alert.messageText = "请先导出并删除所有隧道"
+            alert.informativeText = "删除隧道会关闭按需连接并清除对应的系统配置，然后再移除网络扩展。"
+            alert.runModal()
+            return
+        }
+        SystemExtensionController.shared.deactivate()
+    }
+
     @objc func aboutClicked() {
         var appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
         if let appBuild = Bundle.main.infoDictionary?["CFBundleVersion"] as? String {

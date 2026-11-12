@@ -32,6 +32,8 @@ class MainMenu: NSMenu {
         aboutMenuItem.target = NSApp.delegate
 
         menu.addItem(NSMenuItem.separator())
+        menu.addItem(withTitle: "安装 / 更新网络扩展", action: #selector(AppDelegate.installNetworkExtension), keyEquivalent: "").target = NSApp.delegate
+        menu.addItem(withTitle: "移除网络扩展…", action: #selector(AppDelegate.removeNetworkExtension), keyEquivalent: "").target = NSApp.delegate
 
         menu.addItem(withTitle: tr("macMenuViewLog"),
                      action: #selector(TunnelsListTableViewController.handleViewLogAction), keyEquivalent: "")

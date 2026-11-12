@@ -1,7 +1,7 @@
 name: TunnelOne
 options:
   deploymentTarget:
-    macOS: "12.0"
+    macOS: "13.0"
   developmentLanguage: en
   createIntermediateGroups: true
 settings:
@@ -11,8 +11,8 @@ settings:
     CLANG_ENABLE_OBJC_ARC: YES
     ENABLE_USER_SCRIPT_SANDBOXING: NO
     ENABLE_HARDENED_RUNTIME: YES
-    VERSION_NAME: "0.1.1"
-    VERSION_ID: "2"
+    VERSION_NAME: "0.2.0"
+    VERSION_ID: "3"
     HEADER_SEARCH_PATHS:
       - $(SRCROOT)/Sources/Shared/Logging
       - $(SRCROOT)/Sources/WireGuardApp/ZipArchive/3rdparty/minizip
@@ -59,11 +59,13 @@ targets:
           subpath: Contents/Library/LoginItems
       - sdk: NetworkExtension.framework
       - sdk: ServiceManagement.framework
+      - sdk: SystemExtensions.framework
   WireGuardNetworkExtension:
-    type: app-extension
+    type: system-extension
     platform: macOS
     sources:
       - path: Sources/WireGuardNetworkExtension
+      - path: Sources/SystemExtension
       - path: Sources/Shared
         excludes: ["Logging/test_ringlogger.c"]
       - path: Sources/WireGuardKit
@@ -72,6 +74,9 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: $(APP_ID_MACOS).network-extension
+        PRODUCT_NAME: $(PRODUCT_BUNDLE_IDENTIFIER)
+        PRODUCT_MODULE_NAME: TunnelOneNetworkExtension
+        SYSTEM_EXTENSION_API_ONLY: YES
         SWIFT_OBJC_BRIDGING_HEADER: Sources/WireGuardNetworkExtension/WireGuardNetworkExtension-Bridging-Header.h
         INFOPLIST_FILE: Sources/WireGuardNetworkExtension/Info.plist
         CODE_SIGN_ENTITLEMENTS: Sources/WireGuardNetworkExtension/WireGuardNetworkExtension_macOS.entitlements
@@ -89,8 +94,8 @@ targets:
           cp "$SRCROOT/build/core/mihomo" "$destination/mihomo"
           cp "$SRCROOT/build/core/tunnelone-core-launcher" "$destination/tunnelone-core-launcher"
           if [ "$CODE_SIGNING_ALLOWED" = YES ]; then
-            /usr/bin/codesign --force --options runtime --timestamp --entitlements "$SRCROOT/Config/Core.entitlements" --sign "${EXPANDED_CODE_SIGN_IDENTITY:--}" "$destination/mihomo"
-            /usr/bin/codesign --force --options runtime --timestamp --entitlements "$SRCROOT/Config/Core.entitlements" --sign "${EXPANDED_CODE_SIGN_IDENTITY:--}" "$destination/tunnelone-core-launcher"
+            /usr/bin/codesign --force --options runtime --timestamp --sign "${EXPANDED_CODE_SIGN_IDENTITY:--}" "$destination/mihomo"
+            /usr/bin/codesign --force --options runtime --timestamp --sign "${EXPANDED_CODE_SIGN_IDENTITY:--}" "$destination/tunnelone-core-launcher"
           fi
   TunnelOneLoginItemHelper:
     type: application

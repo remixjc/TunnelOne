@@ -6,21 +6,21 @@
 <p align="center">
   <a href="https://remixjc.github.io/TunnelOne/">项目官网</a> ·
   <a href="https://remixjc.github.io/TunnelOne/prototype.html">交互原型</a> ·
-  <a href="https://github.com/remixjc/TunnelOne/releases">下载开发预览</a> ·
+  <a href="https://github.com/remixjc/TunnelOne/releases">下载 Beta</a> ·
   <a href="docs/signing.md">签名与发布</a>
 </p>
 <p align="center">
   <a href="https://github.com/remixjc/TunnelOne/actions/workflows/build.yml"><img src="https://github.com/remixjc/TunnelOne/actions/workflows/build.yml/badge.svg" alt="macOS build"></a>
   <a href="https://github.com/remixjc/TunnelOne/actions/workflows/pages.yml"><img src="https://github.com/remixjc/TunnelOne/actions/workflows/pages.yml/badge.svg" alt="Pages"></a>
-  <img src="https://img.shields.io/badge/macOS-12%2B-153c36" alt="macOS 12 or newer">
+  <img src="https://img.shields.io/badge/macOS-13%2B-153c36" alt="macOS 13 or newer">
   <img src="https://img.shields.io/badge/license-GPL--3.0-b7f7c1" alt="GPL-3.0">
 </p>
 
 TunnelOne 是面向 macOS 的原生 WireGuard 客户端。在 WireGuard 官方 Apple 客户端的基础上，为每个隧道增加「连接时带入代理」开关：只连接隧道，或同时启动内置 Mihomo，并把 HTTP/HTTPS 代理应用到该隧道的网络设置中。
 
-**当前版本：v0.1.1 开发预览。** 自动化已支持编译、通用架构打包、Pages 部署及预览发布。公开下载为未签名构建，**不能据此验证真实 VPN 连接，也不是可直接用于日常联网的正式版**。App Store 路线需要匹配的 Apple 签名和 profiles；Developer ID 直发路线还需要改为 System Extension 并完成公证。源码包含实际隧道与代理生命周期实现；真实联网验收仍需在正确签名的构建中完成。
+**当前版本：v0.2.0 · System Extension Beta。** 已改为 Developer ID 直接分发使用的系统扩展架构，提供签名、Apple 公证、staple、DMG 和 ZIP 自动发布流程。签名包使用 `-signed` 文件名；未签名包使用 `-preview` 文件名。实际公证和构建结果以对应 Release / Actions 为准。真实 VPN、多用户、更新和卸载验收仍需在签名版本中完成，当前按 Beta 发布。
 
-English: A native macOS WireGuard client with per-tunnel proxy preferences and a bundled Mihomo process. This release is an unsigned developer preview. Production VPN operation requires matching Apple signing, entitlements and provisioning profiles.
+English: A native macOS WireGuard client with per-tunnel proxy preferences and a bundled Mihomo process. Uses a macOS System Extension with authenticated XPC configuration handoff and a per-user proxy process. Signed distributions require Developer ID profiles and successful Apple notarization; unsigned previews remain available for development. The current release is a beta pending device acceptance.
 
 ## 为什么做 TunnelOne
 
@@ -30,11 +30,12 @@ TunnelOne 把代理偏好保存在各自的 VPN 配置中，由 Network Extensio
 
 ## 功能与实现范围
 
-| 功能 | v0.1.1 实现 |
+| 功能 | v0.2.0 实现 |
 | --- | --- |
 | WireGuard 隧道管理 | 基于官方 macOS 客户端：新建、导入 `.conf` / ZIP、编辑、启停、删除、导出 |
 | 多对端与运行信息 | 公钥、地址、DNS、MTU、AllowedIPs、Endpoint、保活、握手与收发统计 |
-| macOS 集成 | 原生 AppKit、菜单栏、Wi-Fi / 以太网按需连接、日志、系统钥匙串 |
+| macOS 集成 | 原生 AppKit、菜单栏、Wi-Fi / 以太网按需连接、日志、用户钥匙串、系统扩展安装与移除 |
+| 进程与配置隔离 | XPC 每条消息校验签名，系统配置按 UID 隔离；Mihomo 以普通用户身份运行 |
 | 每隧道代理开关 | 默认关闭；与标准 `.conf` 分开保存，编辑隧道时保留代理偏好 |
 | 内置代理 | 打包 Mihomo；导入本地 YAML；扩展负责启动、停止和异常退出处理 |
 | 外部代理 | 使用已运行的 HTTP / mixed 代理，如 `127.0.0.1:7890` 的 Clash Party |
@@ -87,7 +88,7 @@ WireGuard 实际 utun 接口 → WireGuard 服务器 → 目标 / 代理节点
 
 ## 开发与构建
 
-需要 macOS、完整 Xcode 15+、Python 3.12+ 和 XcodeGen。已在 Xcode 27.0 上进行本地构建验证；CI 使用 GitHub macOS runner。
+需要 macOS 13+、完整 Xcode 15+、Python 3.12+ 和 XcodeGen。已在 Xcode 27.0 上进行本地构建验证；CI 使用 GitHub macOS runner。
 
 ```bash
 git clone git@github.com:remixjc/TunnelOne.git
@@ -137,7 +138,7 @@ cp Config/Signing.xcconfig.example Config/Signing.xcconfig
 bash scripts/build.sh --signed
 ```
 
-应用和扩展都需要 Network Extension 权限；App Group 必须一致。不要把证书、私钥或 provisioning profiles 提交到仓库。完整流程见[签名与公证](docs/signing.md)。
+正式直发使用 Developer ID Application、主应用和系统扩展的专属 Developer ID profiles，以及 `packet-tunnel-provider-systemextension` 权限；App Group 必须一致。不要把证书、私钥或 provisioning profiles 提交到仓库。完整流程见[签名与公证](docs/signing.md)。
 
 ## 自动化
 
@@ -145,23 +146,24 @@ bash scripts/build.sh --signed
 | --- | --- | --- |
 | PR、push 到 main、手动触发 | `build.yml` | 编译、测试、上传预览 ZIP / DMG 等 artifact |
 | push 到 main（网站更新）、手动触发 | `pages.yml` | 测试官网并部署 `website/` 到 GitHub Pages |
-| push `v*` tag | `build.yml` | 检查版本号、构建、打包、附带源码后创建 GitHub 预发布 |
+| push `v*` tag | `build.yml` | 检查版本、签名、公证、打包、附对应源码后发布 Signed Beta |
 | 手动触发（需签名环境） | `signed-build.yml` | 签名开发构建并上传 artifact，不提升正式版 |
 
-预览发布：
+发布新版本（签名凭据齐全时自动公证）：
 
 ```bash
-git tag v0.1.1
-git push origin v0.1.1
+git tag v0.2.0
+git push origin v0.2.0
 ```
 
-后续版本先更新 `VERSION` 与 `project.yml`，添加 `docs/releases/<版本>.md`，再推送对应 tag。工作流拒绝版本不一致的发布，且不会把未签名预览标成正式版。
+后续版本先更新 `VERSION` 与 `project.yml`，添加 `docs/releases/<版本>.md`，再推送对应 tag。工作流拒绝版本不一致的发布，且不会把未签名预览标成正式版。签名版本默认仍为 Beta；完成真实设备验收后才将仓库变量 `RELEASE_CHANNEL` 改为 `stable`。
 
 ## 项目结构
 
 ```text
 Sources/
-  WireGuardApp/               原生 macOS 应用与代理设置页
+  WireGuardApp/               原生 macOS 应用、代理设置与扩展安装
+  SystemExtension/           系统扩展入口、认证 XPC、root 配置隔离
   WireGuardNetworkExtension/  WireGuard + 代理生命周期
   WireGuardKit*/              上游 WireGuard 底层组件
   Shared/                    钥匙串、日志、配置与代理文件存储

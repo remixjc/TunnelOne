@@ -53,7 +53,7 @@ class TunnelsManager {
                 }
                 guard let proto = tunnelManager.protocolConfiguration as? NETunnelProviderProtocol else { continue }
                 if proto.migrateConfigurationIfNeeded(called: tunnelManager.localizedDescription ?? "unknown") {
-                    tunnelManager.saveToPreferences { _ in }
+                    tunnelManager.saveTunnelPreferences { _ in }
                 }
                 #if os(iOS)
                 let passwordRef = proto.verifyConfigurationReference() ? proto.passwordReference : nil
@@ -105,7 +105,7 @@ class TunnelsManager {
                     // Tunnel was added outside the app
                     if let proto = loadedTunnelProvider.protocolConfiguration as? NETunnelProviderProtocol {
                         if proto.migrateConfigurationIfNeeded(called: loadedTunnelProvider.localizedDescription ?? "unknown") {
-                            loadedTunnelProvider.saveToPreferences { _ in }
+                            loadedTunnelProvider.saveTunnelPreferences { _ in }
                         }
                     }
                     let tunnel = TunnelContainer(tunnel: loadedTunnelProvider)
@@ -137,7 +137,7 @@ class TunnelsManager {
 
         let activeTunnel = tunnels.first { $0.status == .active || $0.status == .activating }
 
-        tunnelProviderManager.saveToPreferences { [weak self] error in
+        tunnelProviderManager.saveTunnelPreferences { [weak self] error in
             if let error = error {
                 wg_log(.error, message: "Add: Saving configuration failed: \(error)")
                 (tunnelProviderManager.protocolConfiguration as? NETunnelProviderProtocol)?.destroyConfigurationReference()
@@ -231,6 +231,10 @@ class TunnelsManager {
             tunnel.onDeactivated = nil
         }
 
+        let previousProtocol = tunnelProviderManager.protocolConfiguration
+        let previousRules = tunnelProviderManager.onDemandRules
+        let previousOnDemand = tunnelProviderManager.isOnDemandEnabled
+        let previousEnabled = tunnelProviderManager.isEnabled
         let oldName = tunnelProviderManager.localizedDescription ?? ""
         let isNameChanged = tunnelName != oldName
         if isNameChanged {
@@ -254,12 +258,26 @@ class TunnelsManager {
             tunnelProviderManager.isOnDemandEnabled = true
         }
 
-        tunnelProviderManager.saveToPreferences { [weak self] error in
+        tunnelProviderManager.saveTunnelPreferences { [weak self] error in
             if let error = error {
-                // TODO: the passwordReference for the old one has already been removed at this point and we can't easily roll back!
+                let stagedReference = tunnelProviderManager.protocolConfiguration?.passwordReference
+                tunnelProviderManager.protocolConfiguration = previousProtocol
+                tunnelProviderManager.localizedDescription = oldName
+                tunnelProviderManager.onDemandRules = previousRules
+                tunnelProviderManager.isOnDemandEnabled = previousOnDemand
+                tunnelProviderManager.isEnabled = previousEnabled
+                tunnelProviderManager.clearCachedConfiguration()
+                tunnel.name = oldName
+                if let stagedReference = stagedReference, stagedReference != previousProtocol?.passwordReference {
+                    Keychain.deleteReference(called: stagedReference)
+                }
                 wg_log(.error, message: "Modify: Saving configuration failed: \(error)")
                 completionHandler(TunnelsManagerError.systemErrorOnModifyTunnel(systemError: error))
                 return
+            }
+            if let oldReference = previousProtocol?.passwordReference,
+               oldReference != tunnelProviderManager.protocolConfiguration?.passwordReference {
+                Keychain.deleteReference(called: oldReference)
             }
             guard let self = self else { return }
             if isNameChanged {
@@ -301,20 +319,19 @@ class TunnelsManager {
 
     func remove(tunnel: TunnelContainer, completionHandler: @escaping (TunnelsManagerError?) -> Void) {
         let tunnelProviderManager = tunnel.tunnelProvider
-        #if os(macOS)
-        if tunnel.isTunnelAvailableToUser {
-            (tunnelProviderManager.protocolConfiguration as? NETunnelProviderProtocol)?.destroyConfigurationReference()
-        }
-        #elseif os(iOS)
-        (tunnelProviderManager.protocolConfiguration as? NETunnelProviderProtocol)?.destroyConfigurationReference()
-        #else
-        #error("Unimplemented")
-        #endif
         tunnelProviderManager.removeFromPreferences { [weak self] error in
             if let error = error {
                 wg_log(.error, message: "Remove: Saving configuration failed: \(error)")
                 completionHandler(TunnelsManagerError.systemErrorOnRemoveTunnel(systemError: error))
                 return
+            }
+            if tunnel.isTunnelAvailableToUser,
+               let proto = tunnelProviderManager.protocolConfiguration as? NETunnelProviderProtocol,
+               let snapshot = proto.providerConfiguration?[SystemExtensionConfiguration.snapshotKey] as? String {
+                SystemExtensionClient.remove(snapshot)
+            }
+            if tunnel.isTunnelAvailableToUser {
+                (tunnelProviderManager.protocolConfiguration as? NETunnelProviderProtocol)?.destroyConfigurationReference()
             }
             if let self = self, let index = self.tunnels.firstIndex(of: tunnel) {
                 self.tunnels.remove(at: index)
@@ -372,7 +389,7 @@ class TunnelsManager {
         let isActivatingOnDemand = !tunnelProviderManager.isOnDemandEnabled && isOnDemandEnabled
         tunnelProviderManager.isOnDemandEnabled = isOnDemandEnabled
         tunnelProviderManager.isEnabled = true
-        tunnelProviderManager.saveToPreferences { error in
+        tunnelProviderManager.saveTunnelPreferences { error in
             if let error = error {
                 wg_log(.error, message: "Modify On-Demand: Saving configuration failed: \(error)")
                 completionHandler(TunnelsManagerError.systemErrorOnModifyTunnel(systemError: error))
@@ -511,8 +528,16 @@ class TunnelsManager {
                     self.activationDelegate?.tunnelActivationSucceeded(tunnel: tunnel)
                 } else if session.status == .disconnected {
                     tunnel.isAttemptingActivation = false
-                    if let (title, message) = lastErrorTextFromNetworkExtension(for: tunnel) {
-                        self.activationDelegate?.tunnelActivationFailed(tunnel: tunnel, error: .activationFailedWithExtensionError(title: title, message: message, wasOnDemandEnabled: tunnelProvider.isOnDemandEnabled))
+                    let proto = tunnelProvider.protocolConfiguration as? NETunnelProviderProtocol
+                    if let snapshot = proto?.providerConfiguration?[SystemExtensionConfiguration.snapshotKey] as? String {
+                        SystemExtensionClient.lastError(snapshot) { value in
+                            if let value = value, let error = PacketTunnelProviderError(rawValue: value) {
+                                let (title, message) = error.alertText
+                                self.activationDelegate?.tunnelActivationFailed(tunnel: tunnel, error: .activationFailedWithExtensionError(title: title, message: message, wasOnDemandEnabled: tunnelProvider.isOnDemandEnabled))
+                            } else {
+                                self.activationDelegate?.tunnelActivationFailed(tunnel: tunnel, error: .activationFailed(wasOnDemandEnabled: tunnelProvider.isOnDemandEnabled))
+                            }
+                        }
                     } else {
                         self.activationDelegate?.tunnelActivationFailed(tunnel: tunnel, error: .activationFailed(wasOnDemandEnabled: tunnelProvider.isOnDemandEnabled))
                     }
@@ -662,12 +687,14 @@ class TunnelContainer: NSObject {
 
         status = .activating // Ensure that no other tunnel can attempt activation until this tunnel is done trying
 
-        guard tunnelProvider.isEnabled else {
+        guard tunnelProvider.isEnabled,
+              (tunnelProvider.protocolConfiguration as? NETunnelProviderProtocol)?
+                .providerConfiguration?[SystemExtensionConfiguration.snapshotKey] is String else {
             // In case the tunnel had gotten disabled, re-enable and save it,
             // then call this function again.
             wg_log(.debug, staticMessage: "startActivation: Tunnel is disabled. Re-enabling and saving")
             tunnelProvider.isEnabled = true
-            tunnelProvider.saveToPreferences { [weak self] error in
+            tunnelProvider.saveTunnelPreferences { [weak self] error in
                 guard let self = self else { return }
                 if error != nil {
                     wg_log(.error, message: "Error saving tunnel after re-enabling: \(error!)")
@@ -727,6 +754,10 @@ class TunnelContainer: NSObject {
 extension NETunnelProviderManager {
     private static var cachedConfigKey: UInt8 = 0
 
+    func clearCachedConfiguration() {
+        objc_setAssociatedObject(self, &NETunnelProviderManager.cachedConfigKey, nil, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+    }
+
     var tunnelConfiguration: TunnelConfiguration? {
         if let cached = objc_getAssociatedObject(self, &NETunnelProviderManager.cachedConfigKey) as? TunnelConfiguration {
             return cached
@@ -768,7 +799,7 @@ extension TunnelContainer {
             var configuration = previous ?? [:]
             configuration[ProxySettings.configurationKey] = try settings.encoded()
             proto.providerConfiguration = configuration
-            tunnelProvider.saveToPreferences { error in
+            tunnelProvider.saveTunnelPreferences { error in
                 if error != nil { proto.providerConfiguration = previous }
                 completion(error)
             }

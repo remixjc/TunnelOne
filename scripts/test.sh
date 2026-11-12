@@ -10,3 +10,7 @@ popd >/dev/null
 python3 scripts/check_site.py
 python3 scripts/check_version.py
 python3 scripts/check_localizations.py
+
+if [[ -d build/DerivedData/Build/Products/Release/TunnelOne.app ]]; then
+  python3 scripts/check_bundle.py build/DerivedData/Build/Products/Release/TunnelOne.app
+fi

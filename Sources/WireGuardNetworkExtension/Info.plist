@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>WireGuardNetworkExtension</string>
+	<string>TunnelOne Network Extension</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -17,23 +17,30 @@
 	<key>CFBundleName</key>
 	<string>$(PRODUCT_NAME)</string>
 	<key>CFBundlePackageType</key>
-	<string>XPC!</string>
+	<string>SYSX</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(VERSION_NAME)</string>
 	<key>CFBundleVersion</key>
 	<string>$(VERSION_ID)</string>
-	<key>NSExtension</key>
-	<dict>
-		<key>NSExtensionPointIdentifier</key>
-		<string>com.apple.networkextension.packet-tunnel</string>
-		<key>NSExtensionPrincipalClass</key>
-		<string>$(PRODUCT_MODULE_NAME).PacketTunnelProvider</string>
-	</dict>
 	<key>com.wireguard.ios.app_group_id</key>
 	<string>group.$(APP_ID_IOS)</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
 	<key>com.wireguard.macos.app_group_id</key>
 	<string>$(DEVELOPMENT_TEAM).group.$(APP_ID_MACOS)</string>
+	<key>NetworkExtension</key>
+	<dict>
+		<key>NEMachServiceName</key>
+		<string>$(DEVELOPMENT_TEAM).group.$(APP_ID_MACOS).control.$(VERSION_ID)</string>
+		<key>NEProviderClasses</key>
+		<dict>
+			<key>com.apple.networkextension.packet-tunnel</key>
+			<string>$(PRODUCT_MODULE_NAME).PacketTunnelProvider</string>
+		</dict>
+	</dict>
+	<key>NSSystemExtensionUsageDescription</key>
+	<string>TunnelOne 使用 WireGuard 网络扩展连接隧道，并按设置启用代理。</string>
+	<key>TunnelOneTeamIdentifier</key>
+	<string>$(DEVELOPMENT_TEAM)</string>
 </dict>
 </plist>

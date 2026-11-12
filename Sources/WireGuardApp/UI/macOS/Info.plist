@@ -38,5 +38,11 @@
 	<string>WireGuard.Application</string>
 	<key>com.wireguard.macos.app_group_id</key>
 	<string>$(DEVELOPMENT_TEAM).group.$(APP_ID_MACOS)</string>
+	<key>NSSystemExtensionUsageDescription</key>
+	<string>TunnelOne 需要网络扩展来建立 WireGuard 隧道。</string>
+	<key>TunnelOneTeamIdentifier</key>
+	<string>$(DEVELOPMENT_TEAM)</string>
+	<key>TunnelOneMachServiceName</key>
+	<string>$(DEVELOPMENT_TEAM).group.$(APP_ID_MACOS).control.$(VERSION_ID)</string>
 </dict>
 </plist>

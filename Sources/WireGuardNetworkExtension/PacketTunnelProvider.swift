@@ -10,7 +10,10 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
     // All lifecycle state below is serialized on the main queue.
     private var generation = 0
     private var proxyReady = false
+    private var proxyExited = false
     private var pendingStart: ((Error?) -> Void)?
+    private var snapshotID: String?
+    private var ownerUID: uid_t?
     private lazy var adapter: WireGuardAdapter = {
         WireGuardAdapter(with: self) { level, message in
             wg_log(level.osLogLevel, message: message)
@@ -32,47 +35,51 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
         let generation = self.generation
         pendingStart = completion
         proxyReady = false
-        let notifier = ErrorNotifier(activationAttemptId: options?["activationAttemptId"] as? String)
-        Logger.configureGlobal(tagged: "NET", withFilePath: FileManager.logFileURL?.path)
+        proxyExited = false
+        Logger.configureGlobal(tagged: "NET", withFilePath: nil)
         guard let proto = protocolConfiguration as? NETunnelProviderProtocol,
-              let tunnel = proto.asTunnelConfiguration() else {
-            notifier.notify(.savedProtocolConfigurationIsInvalid)
+              let id = proto.providerConfiguration?[SystemExtensionConfiguration.snapshotKey] as? String,
+              let uid = proto.providerConfiguration?["UID"] as? uid_t,
+              let snapshot = try? SnapshotStore.shared.load(id, uid: uid),
+              let tunnel = try? TunnelConfiguration(fromWgQuickConfig: snapshot.wireGuard),
+              let account = getpwuid(uid), uid >= 501 else {
             finishStart(PacketTunnelProviderError.savedProtocolConfigurationIsInvalid)
             return
         }
-        let proxy: ProxySettings
-        do {
-            proxy = try ProxySettings.decodeProviderValue(proto.providerConfiguration?[ProxySettings.configurationKey])
-        } catch {
-            wg_log(.error, staticMessage: "Invalid TunnelOne proxy settings; refusing activation")
-            notifier.notify(.couldNotStartProxy)
-            finishStart(error)
-            return
-        }
+        snapshotID = id
+        ownerUID = uid
+        SnapshotStore.shared.recordError(nil, identifier: id, uid: uid)
+        let gid = account.pointee.pw_gid
+        let proxy = snapshot.proxy
         adapter.proxySettings = ProxyRuntime.networkSettings(for: proxy)
         adapter.start(tunnelConfiguration: tunnel) { adapterError in
             DispatchQueue.main.async {
                 guard generation == self.generation else { return }
                 if let error = adapterError {
                     let mapped = self.reportAdapterError(error)
-                    notifier.notify(mapped)
+                    self.recordError(mapped)
                     self.finishStart(mapped)
                     return
                 }
                 wg_log(.info, message: "WireGuard interface: \(self.adapter.interfaceName ?? "unknown")")
-                self.proxyRuntime.start(proxy, interfaceName: self.adapter.interfaceName,
+                self.proxyRuntime.start(proxy, profileData: snapshot.profile, uid: uid, gid: gid,
+                                        interfaceName: self.adapter.interfaceName,
                                         onUnexpectedExit: { [weak self] in
                     DispatchQueue.main.async {
-                        guard let self = self, generation == self.generation, self.proxyReady else { return }
+                        guard let self = self, generation == self.generation else { return }
+                        self.proxyExited = true
+                        guard self.proxyReady else { return }
                         self.proxyReady = false
+                        self.recordError(.couldNotStartProxy)
                         wg_log(.error, staticMessage: "Proxy core exited unexpectedly; disconnecting tunnel")
                         self.cancelTunnelWithError(NSError(domain: "TunnelOne.Proxy", code: 2))
                     }
                 }) { error in
                     DispatchQueue.main.async {
                         guard generation == self.generation else { return }
-                        if let error = error {
-                            notifier.notify(.couldNotStartProxy)
+                        let startupError = error ?? (self.proxyExited ? NSError(domain: "TunnelOne.Proxy", code: 2) : nil)
+                        if let error = startupError {
+                            self.recordError(.couldNotStartProxy)
                             wg_log(.error, staticMessage: "Proxy startup failed; rolling back WireGuard")
                             self.proxyRuntime.stop()
                             self.adapter.stop { _ in
@@ -96,6 +103,11 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
         let completion = pendingStart
         pendingStart = nil
         completion?(error)
+    }
+
+    private func recordError(_ error: PacketTunnelProviderError) {
+        guard let id = snapshotID, let uid = ownerUID else { return }
+        SnapshotStore.shared.recordError(error.rawValue, identifier: id, uid: uid)
     }
 
     private func reportAdapterError(_ error: WireGuardAdapterError) -> PacketTunnelProviderError {
@@ -125,12 +137,9 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
             self.finishStart(NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled))
             self.proxyRuntime.stop()
             self.adapter.stop { error in
-                ErrorNotifier.removeLastErrorFile()
                 if error != nil { wg_log(.error, staticMessage: "WireGuard adapter stop returned an error") }
                 completionHandler()
-                // Retain upstream workaround for Apple bug 32073323 / 47526107.
-                // The launcher observes parent exit and reaps the core if needed.
-                exit(0)
+                // A system extension also hosts XPC; do not exit the daemon on stop.
             }
         }
     }

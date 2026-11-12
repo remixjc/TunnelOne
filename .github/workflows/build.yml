@@ -1,10 +1,15 @@
-name: macOS Build & Preview Release
+name: macOS Build & Release
 on:
   push:
     branches: [main]
     tags: ["v*"]
   pull_request:
   workflow_dispatch:
+    inputs:
+      require_signed:
+        description: Require Developer ID signing and notarization (fail if any signing asset is missing)
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -13,7 +18,9 @@ concurrency:
 jobs:
   build:
     runs-on: macos-15
-    timeout-minutes: 45
+    timeout-minutes: 90
+    outputs:
+      signed: ${{ steps.signing.outputs.signed }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -24,6 +31,42 @@ jobs:
         env:
           RELEASE_TAG: ${{ github.ref_name }}
         run: test "$RELEASE_TAG" = "v$(cat VERSION)"
+      - name: Select distribution mode
+        id: signing
+        env:
+          RELEASE_REF: ${{ startsWith(github.ref, 'refs/tags/') }}
+          REQUIRE_SIGNED: ${{ inputs.require_signed || (startsWith(github.ref, 'refs/tags/') && vars.REQUIRE_SIGNED_RELEASE == 'true') }}
+          MAC_CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+          MAC_CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APP_PROFILE: ${{ secrets.APPLE_APP_PROFILE }}
+          EXTENSION_PROFILE: ${{ secrets.APPLE_EXTENSION_PROFILE }}
+        run: |
+          python - <<'PY'
+          import os
+          required = ['MAC_CSC_LINK', 'MAC_CSC_KEY_PASSWORD', 'APPLE_ID', 'APPLE_APP_SPECIFIC_PASSWORD',
+                      'APPLE_TEAM_ID', 'APP_PROFILE', 'EXTENSION_PROFILE']
+          missing = [name for name in required if not os.environ.get(name)]
+          requested = os.environ['REQUIRE_SIGNED'] == 'true'
+          if requested and missing:
+              raise SystemExit('Required signing assets are missing: ' + ', '.join(missing))
+          signed = not missing and (requested or os.environ['RELEASE_REF'] == 'true')
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write('signed=' + str(signed).lower() + '\n')
+          print('Distribution mode:', 'Developer ID + Apple notarization' if signed else 'unsigned developer preview')
+          PY
+      - name: Import Developer ID signing assets
+        if: steps.signing.outputs.signed == 'true'
+        env:
+          SIGNING_KIND: developer-id
+          MAC_CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+          MAC_CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+          APP_PROFILE: ${{ secrets.APPLE_APP_PROFILE }}
+          EXTENSION_PROFILE: ${{ secrets.APPLE_EXTENSION_PROFILE }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: python scripts/import_signing.py
       - name: Install XcodeGen
         run: brew install xcodegen
       - uses: actions/cache@v4
@@ -33,23 +76,57 @@ jobs:
             ~/go/pkg/mod
           key: dependencies-${{ runner.os }}-${{ hashFiles('scripts/dependencies.lock.json', '**/go.sum') }}
       - name: Build universal application
-        run: bash scripts/build.sh
+        env:
+          SIGNED: ${{ steps.signing.outputs.signed }}
+        run: |
+          if [[ "$SIGNED" == true ]]; then
+            bash scripts/build.sh --signed
+            python scripts/check_bundle.py build/DerivedData/Build/Products/Release/TunnelOne.app --signed
+          else
+            bash scripts/build.sh
+            python scripts/check_bundle.py build/DerivedData/Build/Products/Release/TunnelOne.app
+          fi
       - name: Test
         run: bash scripts/test.sh
-      - name: Package preview
-        run: bash scripts/package.sh preview
+      - name: Notarize application and staple ticket
+        if: steps.signing.outputs.signed == 'true'
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: bash scripts/notarize.sh app
+      - name: Package application
+        env:
+          SIGNED: ${{ steps.signing.outputs.signed }}
+        run: |
+          if [[ "$SIGNED" == true ]]; then
+            bash scripts/package.sh signed
+          else
+            bash scripts/package.sh preview
+            cp docs/PREVIEW.txt dist/READ-ME-FIRST.txt
+          fi
+      - name: Notarize disk image and staple ticket
+        if: steps.signing.outputs.signed == 'true'
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: bash scripts/notarize.sh dmg
       - name: Collect corresponding sources
         run: python scripts/collect_sources.py
       - name: Checksums
         run: |
-          cp docs/PREVIEW.txt dist/READ-ME-FIRST.txt
           cd dist
+          rm -f TunnelOne-*.sha256
           shasum -a 256 *.dmg *.zip *.tar.gz > SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: TunnelOne-universal-preview
+          name: TunnelOne-universal
           path: dist/*
           retention-days: 30
+      - name: Clean signing assets
+        if: always() && steps.signing.outputs.signed == 'true'
+        run: python scripts/cleanup_signing.py
   release:
     if: startsWith(github.ref, 'refs/tags/')
     needs: build
@@ -60,13 +137,40 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: TunnelOne-universal-preview
+          name: TunnelOne-universal
           path: dist
-      - name: Publish developer preview
+      - name: Publish verified distribution
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.ref_name }}
+          SIGNED: ${{ needs.build.outputs.signed }}
+          RELEASE_CHANNEL: ${{ vars.RELEASE_CHANNEL || 'beta' }}
         run: |
-          gh release create "$RELEASE_TAG" dist/* \
-            --prerelease --title "TunnelOne $RELEASE_TAG · Developer Preview" \
-            --notes-file "docs/releases/$RELEASE_TAG.md"
+          title="TunnelOne $RELEASE_TAG · Developer Preview"
+          prerelease=true
+          if [[ "$SIGNED" == true ]]; then
+            title="TunnelOne $RELEASE_TAG · Signed Beta"
+            if [[ "$RELEASE_CHANNEL" == stable ]]; then
+              title="TunnelOne $RELEASE_TAG"
+              prerelease=false
+            fi
+          fi
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" dist/* --clobber
+            gh release edit "$RELEASE_TAG" --title "$title" --prerelease="$prerelease" --notes-file "docs/releases/$RELEASE_TAG.md"
+          elif [[ "$SIGNED" == true ]]; then
+            gh release create "$RELEASE_TAG" dist/* --prerelease="$prerelease" --title "$title" --notes-file "docs/releases/$RELEASE_TAG.md"
+          else
+            gh release create "$RELEASE_TAG" dist/* --prerelease --title "$title" --notes-file "docs/releases/$RELEASE_TAG.md"
+          fi
+          if [[ "$SIGNED" == true ]]; then
+            gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name' |
+              while IFS= read -r asset; do
+                if [[ "$asset" == *-preview.dmg || "$asset" == *-preview.zip || "$asset" == READ-ME-FIRST.txt ]]; then
+                  gh release delete-asset "$RELEASE_TAG" "$asset" --yes
+                fi
+              done
+            if [[ "$prerelease" == false ]]; then
+              gh release edit "$RELEASE_TAG" --latest
+            fi
+          fi

@@ -1,4 +1,4 @@
-name: Signed Development Build
+name: Signed Development System Extension
 on:
   workflow_dispatch:
 permissions:
@@ -18,6 +18,7 @@ jobs:
           python-version: "3.12"
       - name: Import development signing assets
         env:
+          SIGNING_KIND: development
           CERTIFICATE_P12: ${{ secrets.APPLE_CERTIFICATE_P12 }}
           CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           APP_PROFILE: ${{ secrets.APPLE_APP_PROFILE }}
@@ -39,5 +40,4 @@ jobs:
       - name: Clean signing assets
         if: always()
         run: |
-          security delete-keychain "$RUNNER_TEMP/TunnelOne-signing.keychain-db" || true
-          rm -f Config/Signing.xcconfig
+          python scripts/cleanup_signing.py

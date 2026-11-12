@@ -8,6 +8,7 @@ final class ProxyRuntime {
     private var connection: NWConnection?
     private let queue = DispatchQueue(label: "TunnelOne.ProxyRuntime")
     private var generation = 0
+    private var runtimeDirectory: URL?
 
     static func networkSettings(for settings: ProxySettings) -> NEProxySettings? {
         guard settings.enabled else { return nil }
@@ -23,7 +24,8 @@ final class ProxyRuntime {
     }
 
     /// Runs after the WireGuard adapter installed its routes.
-    func start(_ settings: ProxySettings, interfaceName: String?, onUnexpectedExit: @escaping () -> Void,
+    func start(_ settings: ProxySettings, profileData: Data?, uid: uid_t, gid: gid_t,
+               interfaceName: String?, onUnexpectedExit: @escaping () -> Void,
                completion: @escaping (Error?) -> Void) {
         guard settings.enabled else { completion(nil); return }
         queue.async {
@@ -31,20 +33,29 @@ final class ProxyRuntime {
             let generation = self.generation
             do {
                 if settings.source == .builtIn {
-                    guard let id = settings.profileID, let interfaceName = interfaceName,
+                    guard let profileData = profileData, let interfaceName = interfaceName,
                           let executables = Bundle.main.executableURL?.deletingLastPathComponent() else {
                         throw ProxySettings.ValidationError.profile
                     }
-                    let profile = try ProxyProfileStore.profileURL(id: id)
-                    let cache = try ProxyProfileStore.directory().appendingPathComponent(id, isDirectory: true)
-                    try FileManager.default.createDirectory(at: cache, withIntermediateDirectories: true,
+                    let cache = URL(fileURLWithPath: "/private/var/tmp")
+                        .appendingPathComponent("TunnelOne-" + UUID().uuidString, isDirectory: true)
+                    try FileManager.default.createDirectory(at: cache, withIntermediateDirectories: false,
                                                             attributes: [.posixPermissions: 0o700])
+                    self.runtimeDirectory = cache
+                    let profile = cache.appendingPathComponent("profile.yaml")
+                    try profileData.write(to: profile, options: .atomic)
+                    try FileManager.default.setAttributes([.posixPermissions: 0o600,
+                                                          .ownerAccountID: uid, .groupOwnerAccountID: gid],
+                                                         ofItemAtPath: profile.path)
+                    try FileManager.default.setAttributes([.ownerAccountID: uid, .groupOwnerAccountID: gid],
+                                                         ofItemAtPath: cache.path)
                     let process = Process()
                     process.executableURL = executables.appendingPathComponent("tunnelone-core-launcher")
                     process.arguments = ["-profile", profile.path, "-directory", cache.path,
                                          "-port", String(settings.port),
                                          "-core", executables.appendingPathComponent("mihomo").path,
-                                         "-interface", interfaceName]
+                                         "-interface", interfaceName, "-uid", String(uid), "-gid", String(gid)]
+                    process.environment = ["PATH": "/usr/bin:/bin", "HOME": cache.path, "TMPDIR": cache.path]
                     process.standardOutput = FileHandle.nullDevice
                     process.standardError = FileHandle.nullDevice
                     process.terminationHandler = { _ in onUnexpectedExit() }
@@ -55,7 +66,10 @@ final class ProxyRuntime {
                     self.waitForPort(settings, generation: generation, deadline: Date().addingTimeInterval(20),
                                      completion: completion)
                 }
-            } catch { completion(error) }
+            } catch {
+                self.removeRuntimeDirectory()
+                completion(error)
+            }
         }
     }
 
@@ -106,6 +120,12 @@ final class ProxyRuntime {
                 if process.isRunning { process.terminate() }
             }
             self.process = nil
+            self.removeRuntimeDirectory()
         }
+    }
+
+    private func removeRuntimeDirectory() {
+        if let directory = runtimeDirectory { try? FileManager.default.removeItem(at: directory) }
+        runtimeDirectory = nil
     }
 }

@@ -27,7 +27,7 @@ class Keychain {
         if bundleIdentifier.hasSuffix(".network-extension") {
             bundleIdentifier.removeLast(".network-extension".count)
         }
-        let itemLabel = "WireGuard Tunnel: \(name)"
+        let itemLabel = "TunnelOne Tunnel: \(name)"
         var items: [CFString: Any] = [kSecClass: kSecClassGenericPassword,
                                     kSecAttrLabel: itemLabel,
                                     kSecAttrAccount: name + ": " + UUID().uuidString,
@@ -43,24 +43,16 @@ class Keychain {
         items[kSecAttrSynchronizable] = false
         items[kSecAttrAccessible] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
 
-        guard let extensionPath = Bundle.main.builtInPlugInsURL?.appendingPathComponent("WireGuardNetworkExtension.appex", isDirectory: true).path else {
-            wg_log(.error, staticMessage: "Unable to determine app extension path")
-            return nil
-        }
-        var extensionApp: SecTrustedApplication?
+        // System Extension receives an authenticated snapshot over XPC.
+        // Only the GUI app can access its user-keychain copy.
         var mainApp: SecTrustedApplication?
-        ret = SecTrustedApplicationCreateFromPath(extensionPath, &extensionApp)
-        if ret != kOSReturnSuccess || extensionApp == nil {
-            wg_log(.error, message: "Unable to create keychain extension trusted application object: \(ret)")
-            return nil
-        }
         ret = SecTrustedApplicationCreateFromPath(nil, &mainApp)
         if ret != errSecSuccess || mainApp == nil {
             wg_log(.error, message: "Unable to create keychain local trusted application object: \(ret)")
             return nil
         }
         var access: SecAccess?
-        ret = SecAccessCreate(itemLabel as CFString, [extensionApp!, mainApp!] as CFArray, &access)
+        ret = SecAccessCreate(itemLabel as CFString, [mainApp!] as CFArray, &access)
         if ret != errSecSuccess || access == nil {
             wg_log(.error, message: "Unable to create keychain ACL object: \(ret)")
             return nil
@@ -76,9 +68,8 @@ class Keychain {
             wg_log(.error, message: "Unable to add config to keychain: \(ret)")
             return nil
         }
-        if let oldRef = oldRef {
-            deleteReference(called: oldRef)
-        }
+        // Old references remain valid until preference persistence succeeds.
+        // Orphans are pruned against saved preferences at next launch.
         return ref as? Data
     }
 
