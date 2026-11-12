@@ -41,7 +41,7 @@ TunnelOne 把代理偏好保存在各自的 VPN 配置中，由 Network Extensio
 | 外部代理 | 使用已运行的 HTTP / mixed 代理，如 `127.0.0.1:7890` 的 Clash Party |
 | 生命周期 | 应用 HTTP/HTTPS 代理、检查监听端口；启动失败回滚；内置核心异常退出则请求断开 |
 | 官网与原型 | 响应式静态官网、可交互模拟、独立设计原型、GitHub Pages 自动部署 |
-| 构建与发布 | Apple Silicon + Intel universal；ZIP、DMG、SHA-256；tag 触发预览发布 |
+| 构建与发布 | Apple Silicon + Intel universal；ZIP、DMG、SHA-256；tag 触发签名、公证及 Beta 发布 |
 
 当前**没有**实现订阅 URL 管理、节点可视化选择、测速、应用内自动更新和独立的全应用 TUN 代理。节点、代理组、规则与模式由 YAML 管理；修改配置后重新导入。原型包含后续设计方向，不等同于当前原生应用界面或功能承诺。
 
@@ -60,7 +60,7 @@ Mihomo 规则：DIRECT 或代理节点
 WireGuard 实际 utun 接口 → WireGuard 服务器 → 目标 / 代理节点
 ```
 
-1. 从系统钥匙串读取 WireGuard 配置，启动官方 WireGuardAdapter。
+1. 主应用从用户钥匙串读取 WireGuard 配置，经签名校验的 XPC 写入按 UID 隔离的系统快照；系统扩展从快照启动 WireGuardAdapter。
 2. 通过 `NEProxySettings` 为该隧道设置 HTTP/HTTPS 代理。网络变化后重新应用设置时仍保留代理。
 3. 内置模式在 WireGuard 安装路由后启动核心；使用 adapter 返回的实际 `utun` 接口约束核心出站，不依赖固定的 `utun4`。
 4. 导入 YAML 会保留节点与规则，但覆盖 TUN、DNS 监听、额外监听端口、控制 API、LAN 访问与网卡绑定，避免配置接管另一套路由。
@@ -74,7 +74,7 @@ WireGuard 实际 utun 接口 → WireGuard 服务器 → 目标 / 代理节点
 
 以下连接步骤针对已完成正确签名的构建。使用预览前请先阅读[签名指南](docs/signing.md)。
 
-1. 把应用放到 `/Applications`，打开 TunnelOne。
+1. 把 signed 应用放到 `/Applications`，打开 TunnelOne，按系统提示允许网络扩展。
 2. 导入 WireGuard `.conf` 或 ZIP；首次连接允许系统添加 VPN 配置。
 3. 选中隧道，打开详情中的「连接时带入代理 · 设置…」。
 4. 选择模式：
