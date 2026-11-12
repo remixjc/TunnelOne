@@ -66,3 +66,5 @@ v0.2.4 修正探测所处的网络上下文：provider 不能把自身启动的�
 v0.2.4 build 8 已在本机安装并激活；17:10 的实际检查中，Google 代理返回 204，国内检查超时并自动回滚。系统日志确认 through-tunnel 兼容 API 采用了 127.0.0.1:7890，随后因回环接口不能满足 utun8 的绑定要求而失败。此前发布说明声称该 API 绕过代理并不准确，现已更正。
 
 macOS 15+ 改用 NWConnection / NWParameters.tls，将 requiredInterface 设为本次 provider.virtualInterface，并设置 preferNoProxies = true。保留域名解析和系统默认证书验证。macOS 13/14 未提供 virtualInterface，保留原兼容 API；存在代理冲突时仍判定失败并回滚，不宣称其已通过实机验收。
+
+2026-11-12 17:23:16（UTC+8），公证后的 v0.2.5 build 9 在本机安装并激活。扩展实际报告 connected-and-checked，百度隧道内 HTTPS 200 / Google Clash 代理 204；主窗口同步展示双项检查通过、真实握手和流量，连接保持正常。该结果仅覆盖本机系统与现有配置，macOS 13/14 及失败注入等场景仍待验收。

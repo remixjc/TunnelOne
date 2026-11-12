@@ -2,7 +2,9 @@
 
 ## v0.2.5 · 国内检查显式绕过系统代理 · 2026-11-12
 
-macOS 15+ 改用 Network.framework 的 TLS 连接，绑定本次 WireGuard virtualInterface，并设置 preferNoProxies。新增回归验证实际 TLS 参数同时包含指定接口、代理绕过和 TLS 协议。macOS 13/14 保留兼容 API，真实联网仍待验收。签名包安装结果将在实际验证后补充。
+macOS 15+ 改用 Network.framework 的 TLS 连接，绑定本次 WireGuard virtualInterface，并设置 preferNoProxies。新增回归验证实际 TLS 参数同时包含指定接口、代理绕过和 TLS 协议。macOS 13/14 保留兼容 API，真实联网仍待验收。GitHub v0.2.5 标签流水线完成通用签名构建、Swift / Go / 沙盒 WebKit / 客户端 UI 测试及应用 / DMG 公证。下载签名 ZIP 后校验 SHA-256、Developer ID bundle 与公证票据，安装至 /Applications；系统确认为 0.2.5/9 activated enabled。
+
+2026-11-12 17:23:16（UTC+8）启动隧道 152，经过系统 Connected、稳定等待、代理同步后，扩展报告 connected-and-checked：国内通过 WireGuard 隧道内 HTTPS 返回 200，国外通过 Clash HTTP 代理返回 204。主窗口显示“隧道与代理已连接”和“国内直连与国外代理检查均通过”，存在真实握手及收发统计。连接保持正常。此前 build 8 的失败检查已实际触发自动回滚；本次未人为破坏网络来注入 build 9 失败。
 
 ## v0.2.4 · 扩展内直连探测路径 · 2026-11-12
 

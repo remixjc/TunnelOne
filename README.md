@@ -20,7 +20,7 @@ TunnelOne 是面向 macOS 的 WireGuard 客户端。在 WireGuard 官方 Apple �
 
 **v0.2.1 更新：** 主窗口采用原型的侧栏、概览 / 隧道配置 / 按需连接标签页和代理开关布局；通过原生桥接操作真实的隧道管理器。默认代理来源改为本机 Clash Party 的 `127.0.0.1:7890`，不要求另行导入代理 YAML。真实联网验收状态及与 command 的对应关系见 [command 流程对照](docs/design/command-parity.md)。v0.2.0 的历史验收记录不能作为本次新安全启动流程的联网验收证明。
 
-**当前版本：v0.2.5 · Signed Beta。** macOS 15+ 的国内检查使用 Network.framework 绑定本次 WireGuard 接口并显式绕过系统代理；国外检查继续走 Clash。macOS 13/14 保留兼容探测路径，真实联网仍待验收。保留 WebKit 空白窗口修复。使用 Developer ID 直接分发的系统扩展架构，提供签名、Apple 公证、staple、DMG 和 ZIP 自动发布流程。签名包使用 `-signed` 文件名；未签名包使用 `-preview` 文件名。实际公证和构建结果以对应 Release / Actions 为准。v0.2.0 曾在本机验证安装、系统扩展激活、WireGuard 实际握手及 Clash Party 代理访问；v0.2.1 起的新安全启动流程的真实联网与回滚，以及内置代理、多用户、更新和卸载等验收仍需继续，当前按 Beta 发布。
+**当前版本：v0.2.5 · Signed Beta。** macOS 15+ 的国内检查使用 Network.framework 绑定本次 WireGuard 接口并显式绕过系统代理；国外检查继续走 Clash。macOS 13/14 保留兼容探测路径，真实联网仍待验收。保留 WebKit 空白窗口修复。使用 Developer ID 直接分发的系统扩展架构，提供签名、Apple 公证、staple、DMG 和 ZIP 自动发布流程。签名包使用 `-signed` 文件名；未签名包使用 `-preview` 文件名。实际公证和构建结果以对应 Release / Actions 为准。v0.2.0 曾在本机验证安装、系统扩展激活、WireGuard 实际握手及 Clash Party 代理访问；v0.2.5 已在本机验证新版系统扩展、完整安全启动、百度隧道内 HTTPS 200 与 Google Clash 代理 204；macOS 13/14、失败注入、内置代理、多用户、更新和卸载等验收仍需继续，当前按 Beta 发布。
 
 English: A native macOS WireGuard client with per-tunnel proxy preferences and a bundled Mihomo process. Uses a macOS System Extension with authenticated XPC configuration handoff and a per-user proxy process. Signed distributions require Developer ID profiles and successful Apple notarization; unsigned previews remain available for development. The current release is a beta pending device acceptance.
 
