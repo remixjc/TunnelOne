@@ -1,0 +1,17 @@
+TunnelOne 0.1.0 — Developer Preview
+
+This is an unsigned universal macOS development build.
+It is NOT a signed, notarized end-user VPN release.
+
+To establish a real VPN connection, build and sign the application and its
+Network Extension using a paid Apple Developer account with matching
+provisioning profiles, Network Extension and App Group entitlements.
+
+Do not disable system security protections to work around missing signing.
+See the repository for the supported build and signing instructions:
+https://github.com/remixjc/TunnelOne
+
+The interactive website prototype is a simulation and does not alter networks:
+https://remixjc.github.io/TunnelOne/
+
+Source, licenses and checksums accompany this release.

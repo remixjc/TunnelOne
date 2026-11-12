@@ -1,0 +1,29 @@
+{
+  "goVersion": "1.19.13",
+  "go": {
+    "amd64": {
+      "url": "https://dl.google.com/go/go1.19.13.darwin-amd64.tar.gz",
+      "sha256": "1b4329dc9e73def7f894ca71fce78bb9f3f5c4c8671b6c7e4f363a3f47e88325"
+    },
+    "arm64": {
+      "url": "https://dl.google.com/go/go1.19.13.darwin-arm64.tar.gz",
+      "sha256": "022b35fa9c79b9457fa4a14fd9c4cf5f8ea315a8f2e3b3cd949fea55e11a7d7b"
+    }
+  },
+  "mihomoVersion": "v1.19.34",
+  "mihomoRevision": "0455d0d28c4526937380505153e65a843d8612e8",
+  "assets": {
+    "mihomo-darwin-amd64-v1-go120-v1.19.34.gz": {
+      "url": "https://github.com/MetaCubeX/mihomo/releases/download/v1.19.34/mihomo-darwin-amd64-v1-go120-v1.19.34.gz",
+      "sha256": "82de3281838728d3b85a51e1d58a80923092ab497e0cee62f8229b05966c1c63"
+    },
+    "mihomo-darwin-arm64-go120-v1.19.34.gz": {
+      "url": "https://github.com/MetaCubeX/mihomo/releases/download/v1.19.34/mihomo-darwin-arm64-go120-v1.19.34.gz",
+      "sha256": "028c784b68e3d317c76650ec475c6b4e5e45dc03afee1de82cdc30022c125e29"
+    },
+    "vendor.tar.gz": {
+      "url": "https://github.com/MetaCubeX/mihomo/releases/download/v1.19.34/vendor.tar.gz",
+      "sha256": "a0a27ab5917d4744a652c68a90cc3ca196a0d1c7f1b66cd3fa3b2933ff6c3dc0"
+    }
+  }
+}

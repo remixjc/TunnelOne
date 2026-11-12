@@ -1,0 +1,13 @@
+# DIRECT-only example. No subscription, credentials, or remote proxy is included.
+# TunnelOne controls bind address, mixed port, TUN, DNS and utun interface.
+mode: rule
+ipv6: false
+log-level: warning
+proxies: []
+proxy-groups:
+  - name: PROXY
+    type: select
+    proxies:
+      - DIRECT
+rules:
+  - MATCH,DIRECT

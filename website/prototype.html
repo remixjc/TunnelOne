@@ -1,0 +1,709 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>TunnelOne · 交互设计原型</title><style>body{margin:0;padding:24px;background:#f3f5f8;font-family:system-ui}a{color:#157a60}.notice{max-width:1100px;margin:0 auto 16px;font-size:14px}@media(prefers-color-scheme:dark){body{background:#17181b;color:#f5f5f7}a{color:#8bb6ff}}</style><script src="assets/lucide.min.js"></script><body><p class="notice"><a href="./">← TunnelOne</a> · 设计原型，所有连接均为模拟。实际客户端功能以 README 为准。</p><div id="tunnel-one-prototype">
+  <div class="to-preview">
+    <div><strong>隧行</strong><span>macOS 客户端 · 交互原型，不会更改电脑网络</span></div>
+    <div class="to-demo-controls">
+      <label for="to-scenario">演示场景</label>
+      <select id="to-scenario" aria-label="演示场景">
+        <option value="normal">正常连接</option>
+        <option value="proxy-fail">代理不可用</option>
+        <option value="handshake-fail">隧道握手超时</option>
+        <option value="first-run">首次系统授权</option>
+      </select>
+      <button class="to-small-button cursor-interaction" data-action="network-change" id="to-network-demo" disabled>模拟网络变化</button>
+    </div>
+  </div>
+  <div class="to-window" aria-label="隧行 macOS 客户端原型">
+    <header class="to-titlebar">
+      <div class="to-traffic" aria-hidden="true"><span></span><span></span><span></span></div>
+      <div class="to-brand"><i data-lucide="waypoints" aria-hidden="true"></i><span>隧行 <small>TunnelOne</small></span></div>
+      <div class="to-title-status" id="to-title-status"><span class="to-dot"></span>尚未连接</div>
+      <button class="to-icon-button cursor-interaction" data-action="menubar" aria-label="查看菜单栏快捷操作" data-tooltip="菜单栏快捷操作"><i data-lucide="panel-top" aria-hidden="true"></i></button>
+    </header>
+    <div class="to-layout">
+      <aside class="to-sidebar" aria-label="应用导航">
+        <div class="to-sidebar-heading"><span>隧道</span><button class="to-icon-button cursor-interaction" data-action="add-menu" aria-label="添加隧道"><i data-lucide="plus" aria-hidden="true"></i></button></div>
+        <div id="to-tunnels" class="to-tunnels"></div>
+        <div class="to-sidebar-actions">
+          <button class="to-side-action cursor-interaction" data-action="import"><i data-lucide="download" aria-hidden="true"></i>导入隧道</button>
+          <button class="to-side-action cursor-interaction" data-action="export-all"><i data-lucide="archive" aria-hidden="true"></i>导出所有隧道</button>
+        </div>
+        <div class="to-sidebar-bottom">
+          <button class="to-nav-item cursor-interaction" data-page="proxy"><i data-lucide="shuffle" aria-hidden="true"></i>代理配置<span class="to-count">2</span></button>
+          <button class="to-nav-item cursor-interaction" data-page="logs"><i data-lucide="scroll-text" aria-hidden="true"></i>连接日志</button>
+          <button class="to-nav-item cursor-interaction" data-page="settings"><i data-lucide="settings-2" aria-hidden="true"></i>设置</button>
+          <div class="to-sidebar-foot"><span class="to-dot good"></span><span>本机处理 · 配置保存在设备</span></div>
+        </div>
+      </aside>
+      <main class="to-main" id="to-main"></main>
+    </div>
+    <footer class="to-footer"><span id="to-footer-label"><i data-lucide="shield-check" aria-hidden="true"></i>代理设置随隧道自动恢复</span><span>隧行 1.0 · 产品原型</span></footer>
+    <div id="to-sheet-host"></div>
+    <div class="to-toast" id="to-toast" role="status" aria-live="polite" hidden></div>
+  </div>
+</div>
+<style>
+#tunnel-one-prototype{
+  color-scheme:light dark;--to-bg:light-dark(#fff,#202125);--to-fg:light-dark(#202329,#f0f1f4);
+  --to-soft:light-dark(#f6f7f9,#27282d);--to-sidebar:light-dark(#f0f2f5,#26272c);
+  --to-muted:light-dark(#71757e,#a4a8b3);--to-line:light-dark(#e6e8ed,#3b3d44);
+  --to-blue:light-dark(#0768ed,#76acff);--to-onblue:light-dark(#fff,#10243e);
+  --to-blue-soft:light-dark(#e9f1ff,#253650);--to-green:light-dark(#18865a,#63d4a1);
+  --to-green-soft:light-dark(#e9f6ef,#1f3a31);--to-orange:light-dark(#a26013,#f0b66c);
+  --to-orange-soft:light-dark(#fff5e6,#40321f);--to-red:light-dark(#bf3441,#ff939c);
+  --to-red-soft:light-dark(#fff0f1,#462b31);--to-overlay:light-dark(#24293352,#070a1099);
+  --to-shadow:light-dark(#25334a12,#0000002b);--to-radius:12px;
+  color:var(--to-fg);font:14px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Helvetica Neue",sans-serif;
+  width:100%;isolation:isolate
+}
+#tunnel-one-prototype *{box-sizing:border-box}
+#tunnel-one-prototype [hidden]{display:none!important}
+#tunnel-one-prototype button,#tunnel-one-prototype input,#tunnel-one-prototype textarea,#tunnel-one-prototype select{font:inherit;color:inherit}
+#tunnel-one-prototype button{appearance:none}
+#tunnel-one-prototype button:disabled{opacity:.45}
+#tunnel-one-prototype svg{flex-shrink:0;width:17px;height:17px;vertical-align:middle}
+#tunnel-one-prototype h1,#tunnel-one-prototype h2,#tunnel-one-prototype h3,#tunnel-one-prototype p{margin:0}
+#tunnel-one-prototype h1{font-size:25px;font-weight:500;letter-spacing:-.7px}
+#tunnel-one-prototype h2{font-size:17px;font-weight:500;letter-spacing:-.25px}
+#tunnel-one-prototype h3{font-size:14px;font-weight:500}
+#tunnel-one-prototype strong{font-weight:500}
+#tunnel-one-prototype .to-preview{display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap;padding:0 0 16px}
+#tunnel-one-prototype .to-preview>div:first-child{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+#tunnel-one-prototype .to-preview span{color:var(--to-muted);font-size:12px}
+#tunnel-one-prototype .to-demo-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12px}
+#tunnel-one-prototype .to-demo-controls select{background:var(--to-bg);border:1px solid var(--to-line);border-radius:7px;padding:5px 23px 5px 8px;max-width:100%}
+#tunnel-one-prototype .to-window{position:relative;background:var(--to-bg);border:1px solid var(--to-line);border-radius:14px;box-shadow:0 12px 38px var(--to-shadow);overflow:clip}
+#tunnel-one-prototype .to-titlebar{display:flex;align-items:center;gap:17px;min-height:58px;padding:12px 18px;border-bottom:1px solid var(--to-line);background:var(--to-soft)}
+#tunnel-one-prototype .to-traffic{display:flex;gap:7px;flex-shrink:0}
+#tunnel-one-prototype .to-traffic span{width:11px;height:11px;border-radius:50%;background:light-dark(#ff6259,#d05d59)}
+#tunnel-one-prototype .to-traffic span:nth-child(2){background:light-dark(#ffbd2e,#c99d3a)}
+#tunnel-one-prototype .to-traffic span:nth-child(3){background:light-dark(#28c840,#45a35c)}
+#tunnel-one-prototype .to-brand{display:flex;align-items:center;gap:8px;font-weight:500;min-width:0}
+#tunnel-one-prototype .to-brand>svg{color:var(--to-blue);width:21px;height:21px}
+#tunnel-one-prototype .to-brand small{font-size:12px;color:var(--to-muted);margin-left:3px;font-weight:400}
+#tunnel-one-prototype .to-title-status{margin-left:auto;display:flex;align-items:center;gap:7px;color:var(--to-muted);font-size:12px}
+#tunnel-one-prototype .to-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--to-muted);flex-shrink:0}
+#tunnel-one-prototype .to-dot.good{background:var(--to-green)}
+#tunnel-one-prototype .to-dot.warn{background:var(--to-orange)}
+#tunnel-one-prototype .to-layout{display:grid;grid-template-columns:208px minmax(0,1fr);min-height:622px}
+#tunnel-one-prototype .to-sidebar{background:var(--to-sidebar);border-right:1px solid var(--to-line);padding:20px 12px 14px;display:flex;flex-direction:column;min-width:0;gap:12px}
+#tunnel-one-prototype .to-sidebar-heading{display:flex;align-items:center;justify-content:space-between;padding:0 7px;font-size:12px;font-weight:500;color:var(--to-muted)}
+#tunnel-one-prototype .to-icon-button{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:5px;border:0;border-radius:7px;background:transparent;color:var(--to-muted);flex-shrink:0}
+#tunnel-one-prototype .to-icon-button:hover{background:var(--to-blue-soft);color:var(--to-blue)}
+#tunnel-one-prototype .to-tunnels{display:grid;gap:5px}
+#tunnel-one-prototype .to-tunnel{display:flex;gap:10px;align-items:flex-start;padding:12px 10px;text-align:left;border:1px solid transparent;border-radius:9px;background:transparent;width:100%;min-width:0}
+#tunnel-one-prototype .to-tunnel>svg{margin-top:2px;color:var(--to-muted)}
+#tunnel-one-prototype .to-tunnel.selected{background:var(--to-bg);border-color:var(--to-line);box-shadow:0 2px 5px var(--to-shadow)}
+#tunnel-one-prototype .to-tunnel.selected>svg{color:var(--to-blue)}
+#tunnel-one-prototype .to-tunnel .to-tunnel-name{display:block;font-size:12px;font-weight:500;overflow-wrap:anywhere}
+#tunnel-one-prototype .to-tunnel .to-tunnel-meta{display:flex;align-items:center;gap:5px;color:var(--to-muted);font-size:11px;margin-top:3px}
+#tunnel-one-prototype .to-sidebar-actions{display:grid;gap:3px;padding:0 4px}
+#tunnel-one-prototype .to-side-action{display:flex;align-items:center;gap:8px;text-align:left;border:0;background:transparent;color:var(--to-muted);padding:7px 4px;font-size:12px}
+#tunnel-one-prototype .to-side-action svg{width:15px;height:15px}
+#tunnel-one-prototype .to-sidebar-bottom{display:grid;gap:4px;margin-top:auto;padding-top:32px}
+#tunnel-one-prototype .to-nav-item{display:flex;gap:9px;align-items:center;background:transparent;border:0;border-radius:8px;padding:9px 10px;text-align:left;font-size:12px}
+#tunnel-one-prototype .to-nav-item.active{background:var(--to-blue-soft);color:var(--to-blue)}
+#tunnel-one-prototype .to-count{margin-left:auto;color:var(--to-muted);font-size:11px}
+#tunnel-one-prototype .to-sidebar-foot{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--to-muted);padding:18px 7px 0}
+#tunnel-one-prototype .to-main{padding:27px 30px 30px;min-width:0}
+#tunnel-one-prototype .to-page-top{display:flex;align-items:flex-start;gap:14px;justify-content:space-between;margin-bottom:23px}
+#tunnel-one-prototype .to-subtitle{color:var(--to-muted);font-size:12px;margin-top:5px}
+#tunnel-one-prototype .to-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#tunnel-one-prototype .to-button{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:32px;padding:6px 12px;background:var(--to-bg);border:1px solid var(--to-line);border-radius:7px;white-space:normal;text-align:center;font-size:12px}
+#tunnel-one-prototype .to-button:hover{background:var(--to-soft)}
+#tunnel-one-prototype .to-button.primary{background:var(--to-blue);border-color:var(--to-blue);color:var(--to-onblue)}
+#tunnel-one-prototype .to-button.danger{background:var(--to-red-soft);color:var(--to-red);border-color:var(--to-red-soft)}
+#tunnel-one-prototype .to-button.ghost{background:transparent;border-color:transparent;color:var(--to-blue);padding-left:0}
+#tunnel-one-prototype .to-small-button{border:1px solid var(--to-line);background:var(--to-bg);border-radius:7px;padding:5px 9px;font-size:12px}
+#tunnel-one-prototype .to-main-connect{min-width:102px;min-height:36px}
+#tunnel-one-prototype .to-tabs{display:flex;gap:22px;border-bottom:1px solid var(--to-line);margin-bottom:22px;flex-wrap:wrap}
+#tunnel-one-prototype .to-tab{padding:0 1px 11px;border:0;border-bottom:2px solid transparent;background:transparent;color:var(--to-muted);font-size:12px}
+#tunnel-one-prototype .to-tab.active{border-bottom-color:var(--to-blue);color:var(--to-blue);font-weight:500}
+#tunnel-one-prototype .to-status-panel{display:flex;gap:14px;align-items:center;margin-bottom:21px}
+#tunnel-one-prototype .to-status-icon{display:grid;place-items:center;width:46px;height:46px;background:var(--to-soft);color:var(--to-muted);border-radius:14px;flex-shrink:0}
+#tunnel-one-prototype .to-status-icon svg{width:23px;height:23px}
+#tunnel-one-prototype .to-status-icon.good{background:var(--to-green-soft);color:var(--to-green)}
+#tunnel-one-prototype .to-status-icon.warn{background:var(--to-orange-soft);color:var(--to-orange)}
+#tunnel-one-prototype .to-status-title{font-size:17px;font-weight:500}
+#tunnel-one-prototype .to-status-detail{font-size:12px;color:var(--to-muted);margin-top:3px}
+#tunnel-one-prototype .to-status-trailing{margin-left:auto;text-align:right;color:var(--to-muted);font-size:11px}
+#tunnel-one-prototype .to-section{border:1px solid var(--to-line);border-radius:var(--to-radius);margin-top:16px;background:var(--to-bg)}
+#tunnel-one-prototype .to-section-heading{display:flex;align-items:center;gap:12px;justify-content:space-between;padding:15px 17px;border-bottom:1px solid var(--to-line)}
+#tunnel-one-prototype .to-section-heading h3{display:flex;align-items:center;gap:8px}
+#tunnel-one-prototype .to-section-heading h3 svg{color:var(--to-blue)}
+#tunnel-one-prototype .to-section-content{padding:16px 17px}
+#tunnel-one-prototype .to-switch{position:relative;display:inline-flex;flex-shrink:0;align-items:center;width:34px;height:21px;vertical-align:middle}
+#tunnel-one-prototype .to-switch input{position:absolute;opacity:0;width:100%;height:100%;margin:0;z-index:2}
+#tunnel-one-prototype .to-switch span{position:absolute;inset:0;background:var(--to-line);border-radius:20px;transition:background .15s}
+#tunnel-one-prototype .to-switch span:after{content:"";position:absolute;width:17px;height:17px;background:light-dark(#fff,#ecedf0);border-radius:50%;left:2px;top:2px;box-shadow:0 1px 3px var(--to-shadow);transition:transform .15s}
+#tunnel-one-prototype .to-switch input:checked+span{background:var(--to-blue)}
+#tunnel-one-prototype .to-switch input:checked+span:after{transform:translateX(13px)}
+#tunnel-one-prototype .to-switch input:focus-visible+span{outline:3px solid var(--to-blue);outline-offset:3px}
+#tunnel-one-prototype .to-switch input:disabled+span{opacity:.45}
+#tunnel-one-prototype .to-setting-row{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:14px 0}
+#tunnel-one-prototype .to-setting-row+.to-setting-row{border-top:1px solid var(--to-line)}
+#tunnel-one-prototype .to-setting-row:first-child{padding-top:0}
+#tunnel-one-prototype .to-setting-row:last-child{padding-bottom:0}
+#tunnel-one-prototype .to-setting-row p{font-size:12px;color:var(--to-muted);margin-top:3px}
+#tunnel-one-prototype .to-proxy-off{color:var(--to-muted);font-size:12px;padding:2px 0}
+#tunnel-one-prototype .to-profile-line{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:13px}
+#tunnel-one-prototype .to-field{display:flex;flex-direction:column;gap:6px;font-size:12px;min-width:0}
+#tunnel-one-prototype .to-input,#tunnel-one-prototype .to-select,#tunnel-one-prototype .to-textarea{width:100%;max-width:100%;border:1px solid var(--to-line);background:var(--to-bg);color:var(--to-fg);border-radius:7px;padding:7px 9px;min-width:0;font-size:12px}
+#tunnel-one-prototype .to-select{padding-right:25px}
+#tunnel-one-prototype .to-textarea{resize:vertical;min-height:88px}
+#tunnel-one-prototype .to-code{font:12px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--to-soft);border-radius:8px;padding:14px;margin:0}
+#tunnel-one-prototype .to-caption{font-size:11px;color:var(--to-muted)}
+#tunnel-one-prototype .to-footnote{display:flex;gap:7px;align-items:flex-start;font-size:11px;color:var(--to-muted);margin-top:13px}
+#tunnel-one-prototype .to-footnote svg{width:14px;height:14px;margin-top:1px}
+#tunnel-one-prototype .to-pill{display:inline-flex;gap:5px;align-items:center;padding:3px 8px;border-radius:5px;background:var(--to-soft);font-size:11px;color:var(--to-muted)}
+#tunnel-one-prototype .to-pill.good{background:var(--to-green-soft);color:var(--to-green)}
+#tunnel-one-prototype .to-pill.blue{background:var(--to-blue-soft);color:var(--to-blue)}
+#tunnel-one-prototype .to-pill.warn{background:var(--to-orange-soft);color:var(--to-orange)}
+#tunnel-one-prototype .to-details{display:grid;grid-template-columns:1fr 1fr;gap:17px 22px;margin-top:22px}
+#tunnel-one-prototype .to-details dt{font-size:11px;color:var(--to-muted);margin-bottom:4px}
+#tunnel-one-prototype .to-details dd{margin:0;font-size:12px;overflow-wrap:anywhere}
+#tunnel-one-prototype .to-mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+#tunnel-one-prototype .to-connection-flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px;font-size:11px;color:var(--to-muted)}
+#tunnel-one-prototype .to-flow-item{display:flex;align-items:center;gap:5px}
+#tunnel-one-prototype .to-flow-item.on{color:var(--to-blue)}
+#tunnel-one-prototype .to-connection-flow>svg{width:12px;height:12px;color:var(--to-muted)}
+#tunnel-one-prototype .to-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;border-top:1px solid var(--to-line);padding-top:15px;margin-top:18px}
+#tunnel-one-prototype .to-metrics dt{font-size:11px;color:var(--to-muted)}
+#tunnel-one-prototype .to-metrics dd{margin:4px 0 0;font-variant-numeric:tabular-nums;font-size:15px}
+#tunnel-one-prototype .to-progress{display:flex;gap:7px;flex-wrap:wrap;margin:16px 0 18px}
+#tunnel-one-prototype .to-step{flex:1 1 60px;border-top:3px solid var(--to-line);padding-top:7px;font-size:11px;color:var(--to-muted)}
+#tunnel-one-prototype .to-step.done{border-color:var(--to-green)}
+#tunnel-one-prototype .to-step.current{border-color:var(--to-blue);color:var(--to-blue)}
+#tunnel-one-prototype .to-notice{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;background:var(--to-orange-soft);border-radius:8px;font-size:12px;margin-top:14px}
+#tunnel-one-prototype .to-notice>svg{color:var(--to-orange);margin-top:2px}
+#tunnel-one-prototype .to-notice.error{background:var(--to-red-soft)}
+#tunnel-one-prototype .to-notice.error>svg{color:var(--to-red)}
+#tunnel-one-prototype .to-notice p{color:var(--to-muted);font-size:11px;margin-top:3px}
+#tunnel-one-prototype .to-notice .to-row{margin-top:8px}
+#tunnel-one-prototype .to-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+#tunnel-one-prototype .to-span-all{grid-column:1/-1}
+#tunnel-one-prototype .to-check{display:flex;align-items:center;gap:8px;font-size:12px}
+#tunnel-one-prototype input[type=checkbox],#tunnel-one-prototype input[type=radio]{accent-color:var(--to-blue)}
+#tunnel-one-prototype .to-list{display:grid;gap:0}
+#tunnel-one-prototype .to-list-row{display:flex;gap:10px;align-items:center;padding:13px 0}
+#tunnel-one-prototype .to-list-row+.to-list-row{border-top:1px solid var(--to-line)}
+#tunnel-one-prototype .to-list-row>svg{color:var(--to-muted)}
+#tunnel-one-prototype .to-list-row .to-grow{flex:1;min-width:0}
+#tunnel-one-prototype .to-list-row p{font-size:11px;color:var(--to-muted);margin-top:2px}
+#tunnel-one-prototype .to-list-row.selected .to-node-name{color:var(--to-blue)}
+#tunnel-one-prototype .to-radio-card{display:flex;gap:10px;align-items:flex-start;padding:14px 15px;border:1px solid var(--to-line);border-radius:9px;background:var(--to-bg);min-width:0}
+#tunnel-one-prototype .to-radio-card:has(input:checked){border-color:var(--to-blue);background:var(--to-blue-soft)}
+#tunnel-one-prototype .to-radio-card input{margin-top:4px;flex-shrink:0}
+#tunnel-one-prototype .to-radio-card p{font-size:11px;color:var(--to-muted);margin-top:3px}
+#tunnel-one-prototype .to-source-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+#tunnel-one-prototype .to-divider{border:0;border-top:1px solid var(--to-line);margin:19px 0}
+#tunnel-one-prototype .to-text-button{display:inline-flex;align-items:center;gap:5px;padding:0;border:0;background:transparent;color:var(--to-blue);font-size:12px}
+#tunnel-one-prototype .to-table{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed}
+#tunnel-one-prototype .to-table th{color:var(--to-muted);font-weight:400;text-align:left}
+#tunnel-one-prototype .to-table td,#tunnel-one-prototype .to-table th{padding:10px 5px;border-bottom:1px solid var(--to-line);vertical-align:top;overflow-wrap:anywhere}
+#tunnel-one-prototype .to-table th:first-child{width:65px}
+#tunnel-one-prototype .to-table th:nth-child(2){width:66px}
+#tunnel-one-prototype .to-log-good{color:var(--to-green)}
+#tunnel-one-prototype .to-log-error{color:var(--to-red)}
+#tunnel-one-prototype .to-empty{text-align:center;padding:42px 15px;color:var(--to-muted)}
+#tunnel-one-prototype .to-empty>svg{width:28px;height:28px;margin-bottom:12px}
+#tunnel-one-prototype .to-footer{display:flex;justify-content:space-between;align-items:center;gap:15px;padding:11px 18px;border-top:1px solid var(--to-line);font-size:11px;color:var(--to-muted)}
+#tunnel-one-prototype .to-footer>span:first-child{display:flex;gap:6px;align-items:center}
+#tunnel-one-prototype .to-footer svg{width:13px;height:13px}
+#tunnel-one-prototype .to-overlay{position:absolute;inset:0;background:var(--to-overlay);z-index:20;padding:50px 20px 30px;display:flex;justify-content:center;align-items:flex-start}
+#tunnel-one-prototype .to-sheet{width:100%;max-width:590px;min-width:0;background:var(--to-bg);border:1px solid var(--to-line);border-radius:14px;box-shadow:0 18px 70px var(--to-shadow)}
+#tunnel-one-prototype .to-sheet-head{display:flex;justify-content:space-between;gap:15px;align-items:center;padding:20px 22px 15px}
+#tunnel-one-prototype .to-sheet-body{padding:0 22px 20px}
+#tunnel-one-prototype .to-sheet-body>p{font-size:12px;color:var(--to-muted);margin-bottom:16px}
+#tunnel-one-prototype .to-sheet-actions{display:flex;justify-content:flex-end;align-items:center;gap:9px;flex-wrap:wrap;padding:14px 22px;border-top:1px solid var(--to-line)}
+#tunnel-one-prototype .to-sheet .to-tabs{margin-bottom:16px}
+#tunnel-one-prototype .to-sheet-error{font-size:12px;color:var(--to-red);margin-bottom:12px}
+#tunnel-one-prototype .to-toast{position:absolute;bottom:48px;left:50%;transform:translateX(-50%);max-width:calc(100% - 32px);width:max-content;padding:10px 15px;border:1px solid var(--to-line);border-radius:9px;background:var(--to-fg);color:var(--to-bg);font-size:12px;z-index:30;box-shadow:0 5px 15px var(--to-shadow)}
+#tunnel-one-prototype .to-key{display:flex;gap:7px;align-items:center;min-width:0}
+#tunnel-one-prototype .to-key code{flex:1;overflow-wrap:anywhere}
+#tunnel-one-prototype .to-advanced{margin-top:14px}
+#tunnel-one-prototype .to-advanced summary{font-size:12px;color:var(--to-muted)}
+#tunnel-one-prototype .to-advanced>div{margin-top:12px}
+#tunnel-one-prototype[data-density=compact] .to-main{padding-top:20px;padding-bottom:22px}
+#tunnel-one-prototype[data-density=compact] .to-setting-row{padding-top:10px;padding-bottom:10px}
+#tunnel-one-prototype[data-density=compact] .to-section-content{padding-top:12px;padding-bottom:12px}
+@media(max-width:850px){
+  #tunnel-one-prototype .to-layout{grid-template-columns:180px minmax(0,1fr)}
+  #tunnel-one-prototype .to-main{padding:23px 21px}
+  #tunnel-one-prototype h1{font-size:22px}
+  #tunnel-one-prototype .to-page-top{flex-wrap:wrap}
+  #tunnel-one-prototype .to-source-grid{grid-template-columns:1fr}
+}
+@media(max-width:620px){
+  #tunnel-one-prototype .to-layout{grid-template-columns:minmax(0,1fr)}
+  #tunnel-one-prototype .to-sidebar{border-right:0;border-bottom:1px solid var(--to-line);padding:14px;gap:10px}
+  #tunnel-one-prototype .to-tunnels{grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr))}
+  #tunnel-one-prototype .to-tunnel{padding:9px}
+  #tunnel-one-prototype .to-sidebar-heading{padding:0 2px}
+  #tunnel-one-prototype .to-sidebar-actions{display:flex;gap:14px;flex-wrap:wrap}
+  #tunnel-one-prototype .to-sidebar-bottom{display:flex;gap:7px;flex-wrap:wrap;margin:0;padding:0}
+  #tunnel-one-prototype .to-nav-item{padding:7px 8px}
+  #tunnel-one-prototype .to-sidebar-foot{display:none}
+  #tunnel-one-prototype .to-main{padding:23px 18px}
+  #tunnel-one-prototype .to-titlebar{padding:12px;gap:10px}
+  #tunnel-one-prototype .to-brand small{display:none}
+  #tunnel-one-prototype .to-title-status{font-size:11px}
+  #tunnel-one-prototype .to-traffic{gap:5px}
+  #tunnel-one-prototype .to-traffic span{width:9px;height:9px}
+  #tunnel-one-prototype .to-form-grid{grid-template-columns:1fr}
+  #tunnel-one-prototype .to-details{gap:14px}
+  #tunnel-one-prototype .to-footer{flex-wrap:wrap;padding:10px 13px}
+  #tunnel-one-prototype .to-overlay{padding:35px 12px}
+  #tunnel-one-prototype .to-sheet-head{padding:17px 17px 13px}
+  #tunnel-one-prototype .to-sheet-body{padding:0 17px 17px}
+  #tunnel-one-prototype .to-sheet-actions{padding:12px 17px}
+  #tunnel-one-prototype .to-status-trailing{display:none}
+}
+@media(prefers-reduced-motion:reduce){#tunnel-one-prototype *{transition:none!important}}
+@media(pointer:coarse){
+  #tunnel-one-prototype .to-button,#tunnel-one-prototype .to-small-button,#tunnel-one-prototype .to-nav-item,#tunnel-one-prototype .to-icon-button,#tunnel-one-prototype .to-tab{min-height:44px}
+  #tunnel-one-prototype .to-icon-button{min-width:44px}
+  #tunnel-one-prototype .to-input,#tunnel-one-prototype .to-select,#tunnel-one-prototype .to-textarea{font-size:16px}
+  #tunnel-one-prototype .to-switch{width:44px;height:30px}
+  #tunnel-one-prototype .to-switch span{inset:4px 5px}
+}
+</style>
+<script>
+(() => {
+  const root = document.getElementById('tunnel-one-prototype');
+  const main = root.querySelector('#to-main');
+  const sheetHost = root.querySelector('#to-sheet-host');
+  const demoKey = 'DEMO_PRIVATE_KEY_NOT_FOR_REAL_CONNECTION';
+  const icon = name => `<i data-lucide="${name}" aria-hidden="true"></i>`;
+  const esc = text => String(text ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const button = (text, action, type = '', extra = '') => `<button type="button" class="to-button cursor-interaction ${type}" data-action="${action}" ${extra}>${text}</button>`;
+  const toggle = (key, checked, label, disabled = false) => `<label class="to-switch cursor-interaction"><input type="checkbox" role="switch" data-toggle="${key}" aria-label="${label}" ${checked?'checked':''} ${disabled?'disabled':''}><span aria-hidden="true"></span></label>`;
+  const profiles = [
+    {id:'home',name:'Home WireGuard',note:'日常上网',address:'10.8.0.2/24',dns:'114.114.114.114, 1.1.1.1',mtu:'1420',listen:'自动',proxy:true,source:'builtin',failure:'disconnect',ondemand:false,wifi:true,ethernet:false,ssidMode:'all',ssids:'',peers:[{endpoint:'192.0.2.20:51820',allowed:'0.0.0.0/0',keepalive:'25',publicKey:'DEMO_PUBLIC_KEY_4bNf…q9M=',psk:true}]},
+    {id:'office',name:'Office Private',note:'工作内网',address:'10.20.0.3/24',dns:'10.20.0.1',mtu:'自动',listen:'自动',proxy:false,source:'builtin',failure:'disconnect',ondemand:false,wifi:true,ethernet:true,ssidMode:'exclude',ssids:'Office-WiFi',peers:[{endpoint:'vpn.example.com:51820',allowed:'10.20.0.0/16',keepalive:'25',publicKey:'DEMO_PUBLIC_KEY_7aJk…v2E=',psk:false}]},
+    {id:'travel',name:'Travel',note:'外出备用',address:'10.9.0.4/24',dns:'1.1.1.1',mtu:'自动',listen:'自动',proxy:true,source:'local',failure:'keep',ondemand:false,wifi:true,ethernet:false,ssidMode:'all',ssids:'',peers:[{endpoint:'travel.example.com:51820',allowed:'0.0.0.0/0, ::/0',keepalive:'25',publicKey:'DEMO_PUBLIC_KEY_5cHr…m8L=',psk:true}]}
+  ];
+  const state = {
+    page:'tunnel',tab:'overview',selected:'home',active:null,phase:'idle',step:-1,appliedProxy:false,
+    failure:null,scenario:'normal',modal:null,logs:[],logFilter:'all',proxyMode:'rule',node:'auto',
+    localHost:'127.0.0.1',localPort:'7890',localProtocol:'mixed',autoLaunch:true,
+    login:false,menubar:true,closeBackground:true,updates:true,authorized:true,
+    demandBlocked:false,showKey:false,editorMode:'form',draftPeers:null,updated:'今天 18:17',
+    editId:null,modalError:'',restoreMessage:'',density:'comfortable',roundness:12
+  };
+  let runToken = 0, toastTimer = null, nextId = 1;
+  const fallbackProfile=JSON.parse(JSON.stringify(profiles[0]));
+  const current = () => profiles.find(p => p.id === state.selected) || profiles[0] || fallbackProfile;
+  const getProfile = id => profiles.find(p => p.id === id);
+  const busy = () => ['connecting','applying','reasserting'].includes(state.phase);
+  const sourceName = p => p.source === 'local' ? '本机代理 · Clash Party' : '内置代理 · 日常分流';
+  function restoreSaved(saved) {
+    const a = saved?.modelContent, b = saved?.privateContent;
+    if (a?.product !== 'TunnelOne') return;
+    if (['tunnel','proxy','logs','settings'].includes(a.page)) state.page = a.page;
+    if (getProfile(a.selectedTunnel)) state.selected = a.selectedTunnel;
+    if (typeof a.bringProxy === 'boolean') current().proxy = a.bringProxy;
+    if (['overview','configuration','ondemand'].includes(b?.tab)) state.tab = b.tab;
+    if (['comfortable','compact'].includes(b?.density)) state.density = b.density;
+  }
+  restoreSaved(window.openai?.widgetState);
+  function persist() {
+    const snapshot = {
+      modelContent:{product:'TunnelOne',page:state.page,selectedTunnel:state.selected,bringProxy:current()?.proxy ?? false,proxySource:current()?.source ?? 'builtin',connectionState:state.phase,scenario:state.scenario},
+      privateContent:{tab:state.tab,density:state.density}
+    };
+    if (window.openai?.setWidgetState) window.openai.setWidgetState(snapshot).catch(() => {});
+  }
+  window.addEventListener('openai:set_globals', event => {
+    const saved = event.detail?.globals?.widgetState;
+    if (saved) {
+      const before=JSON.stringify([state.page,state.selected,state.tab,state.density,current().proxy]);
+      restoreSaved(saved);
+      const after=JSON.stringify([state.page,state.selected,state.tab,state.density,current().proxy]);
+      if(before!==after)render();
+    }
+  });
+  function icons() { if (globalThis.lucide?.createIcons) lucide.createIcons({attrs:{width:17,height:17}}); }
+  function toast(text) {
+    const el = root.querySelector('#to-toast');
+    el.textContent = text; el.hidden = false; clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {el.hidden=true;},3200);
+  }
+  function log(level,category,message) {
+    const time = new Date().toLocaleTimeString('zh-CN',{hour12:false});
+    state.logs.unshift({time,level,category,message});
+    state.logs = state.logs.slice(0,40);
+  }
+  function showModal(name) { state.modal=name; state.modalError=''; renderSheet(); icons(); }
+  function closeModal() { state.modal=null; state.modalError=''; renderSheet(); root.querySelector('.to-window').style.minHeight=''; }
+  function switchPage(page) { state.page=page;closeModal();render();persist(); }
+  function configText(p) {
+    const peerText = p.peers.map(x=>`[Peer]\nPublicKey = ${x.publicKey}\n${x.psk?'PresharedKey = DEMO_PRESHARED_KEY\n':''}Endpoint = ${x.endpoint}\nAllowedIPs = ${x.allowed}\nPersistentKeepalive = ${x.keepalive || '0'}`).join('\n\n');
+    return `# 隧行交互原型 · 演示配置，不能用于真实连接\n[Interface]\nPrivateKey = ${demoKey}\nAddress = ${p.address}\nDNS = ${p.dns}\n${p.mtu!=='自动'?'MTU = '+p.mtu+'\n':''}${p.listen!=='自动'?'ListenPort = '+p.listen+'\n':''}\n${peerText}`;
+  }
+  function header(title,subtitle,actions='') {
+    return `<div class="to-page-top"><div><h1>${esc(title)}</h1><p class="to-subtitle">${subtitle}</p></div><div class="to-row">${actions}</div></div>`;
+  }
+  function statusMarkup(p) {
+    const own = state.active===p.id, connected=own&&state.phase==='connected', progress=own&&busy();
+    let title='隧道未连接', detail='准备就绪，连接后自动处理网络与代理。', cls='', glyph='shield';
+    if (connected) {
+      title=state.appliedProxy?'隧道与代理已连接':'WireGuard 已连接';
+      detail=state.appliedProxy?'国内直连与国外代理均可用。':'当前按 WireGuard 配置访问网络。';
+      cls=state.failure?'warn':'good';glyph=state.failure?'shield-alert':'shield-check';
+    }
+    if (progress) {
+      title=state.phase==='applying'?'正在更新代理':state.phase==='reasserting'?'正在恢复网络连接':'正在连接';
+      detail=stepLabels(p)[Math.max(0,state.step)] || '正在准备网络配置…';glyph='loader-circle';
+    }
+    if (!own&&state.active) detail=`${esc(getProfile(state.active)?.name)} 正在连接或运行。`;
+    return `<div class="to-status-panel" aria-live="polite"><div class="to-status-icon ${cls}">${icon(glyph)}</div><div><div class="to-status-title">${title}</div><div class="to-status-detail">${detail}</div></div><div class="to-status-trailing">${connected?'<span class="to-pill good">握手正常</span><p style="margin-top:6px">上次握手 · 刚刚</p>':'<span class="to-pill">本地配置</span>'}</div></div>`;
+  }
+  function stepLabels(p) {
+    return p.proxy?['建立隧道','确认握手','准备代理','应用配置','验证网络']:['建立隧道','确认握手','验证网络'];
+  }
+  function tunnelPage() {
+    const p=current(); if(!profiles.length) return `${header('隧道','添加你的第一个 WireGuard 隧道。',button(icon('plus')+'添加隧道','add-menu','primary'))}<div class="to-empty">${icon('shield')}<p>还没有隧道</p></div>`;
+    const own=state.active===p.id, connected=own&&state.phase==='connected', progress=own&&busy();
+    const connectLabel=progress?'取消连接':connected?'断开连接':'连接隧道';
+    const tabs=[['overview','概览'],['configuration','隧道配置'],['ondemand','按需连接']];
+    let html=header(p.name,`${esc(p.note)} <span style="margin:0 5px">·</span> WireGuard`,button(icon(connected?'square':'power')+connectLabel,'connect',connected?'to-main-connect':'primary to-main-connect')+`<button type="button" class="to-icon-button cursor-interaction" data-action="tunnel-menu" aria-label="隧道操作">${icon('ellipsis')}</button>`);
+    html+=`<div class="to-tabs" role="tablist" aria-label="隧道详情">${tabs.map(([id,label])=>`<button type="button" class="to-tab cursor-interaction ${state.tab===id?'active':''}" role="tab" aria-selected="${state.tab===id}" aria-controls="to-tab-content" data-tab="${id}" id="to-tab-${id}">${label}</button>`).join('')}</div><div id="to-tab-content" role="tabpanel" aria-labelledby="to-tab-${state.tab}">`;
+    if(state.tab==='overview') {
+      html+=statusMarkup(p);
+      if(progress) html+=`<div class="to-progress" aria-label="连接进度">${stepLabels(p).map((x,i)=>`<div class="to-step ${i<state.step?'done':i===state.step?'current':''}">${x}</div>`).join('')}</div>`;
+      if(state.failure&&(!state.active||own)) html+=failureNotice();
+      html+=`<section class="to-section"><div class="to-section-heading"><div><h3>${icon('shuffle')}连接时带入代理</h3><p class="to-subtitle">为这个隧道单独设置，连接时自动生效。</p></div>${toggle('proxy',p.proxy,'连接时带入代理',progress)}</div><div class="to-section-content">`;
+      if(p.proxy) html+=`<div class="to-profile-line" style="margin-top:0"><label class="to-field" style="flex:1">使用代理配置<select class="to-select" data-field="source" aria-label="使用代理配置"><option value="builtin" ${p.source==='builtin'?'selected':''}>内置代理 · 日常分流</option><option value="local" ${p.source==='local'?'selected':''}>本机代理 · Clash Party</option></select></label><button class="to-text-button cursor-interaction" data-page="proxy" style="margin-top:23px">管理配置</button></div><div class="to-connection-flow"><span class="to-flow-item">${icon('laptop')}应用</span>${icon('chevron-right')}<span class="to-flow-item on">${icon('shuffle')}规则分流</span>${icon('chevron-right')}<span class="to-flow-item on">${icon('shield')}WireGuard</span>${icon('chevron-right')}<span class="to-flow-item">${icon('globe')}互联网</span></div><details class="to-advanced"><summary class="cursor-interaction">代理失败时的处理</summary><div><label class="to-field"><select class="to-select" data-field="failure" aria-label="代理失败时的处理"><option value="disconnect" ${p.failure==='disconnect'?'selected':''}>断开隧道并恢复原网络（推荐）</option><option value="keep" ${p.failure==='keep'?'selected':''}>仅保留 WireGuard 隧道</option></select></label></div></details>`;
+      else html+=`<div class="to-proxy-off">仅使用 WireGuard，不启动代理，也不改变现有系统代理。</div><div class="to-connection-flow"><span class="to-flow-item">${icon('laptop')}应用</span>${icon('chevron-right')}<span class="to-flow-item on">${icon('shield')}WireGuard</span>${icon('chevron-right')}<span class="to-flow-item">${icon('globe')}互联网</span></div>`;
+      html+=`<div class="to-footnote">${icon('undo-2')}<span>断开时恢复连接前的代理配置。系统授权仅在首次安装时申请。</span></div></div></section>`;
+      if(own&&state.phase==='connected'&&p.proxy!==state.appliedProxy)html+=`<div class="to-notice">${icon('info')}<div>代理开关已保存，下次连接生效。<div class="to-row">${button('立即应用','apply-proxy')}</div></div></div>`;
+      html+=`<dl class="to-details"><div><dt>本地地址</dt><dd class="to-mono">${esc(p.address)}</dd></div><div><dt>服务器</dt><dd class="to-mono">${esc(p.peers[0]?.endpoint||'未配置')}</dd></div><div><dt>DNS 服务器</dt><dd class="to-mono">${esc(p.dns)}</dd></div><div><dt>路由范围</dt><dd>${p.peers[0]?.allowed.includes('0.0.0.0/0')?'IPv4 全局流量':esc(p.peers[0]?.allowed||'未配置')}${p.peers[0]?.allowed.includes('::/0')?' · 包含 IPv6':''}</dd></div></dl>`;
+      if(connected)html+=`<dl class="to-metrics"><div><dt>已接收</dt><dd>12.4 MB</dd></div><div><dt>已发送</dt><dd>2.1 MB</dd></div><div><dt>当前出口</dt><dd>${state.appliedProxy?'隧道 + 代理':'仅隧道'}</dd></div></dl>`;
+      else html+=`<div class="to-row" style="justify-content:space-between;margin-top:22px"><span class="to-caption">配置更新 · 今天</span><button class="to-text-button cursor-interaction" data-tab="configuration">查看完整配置 ${icon('arrow-up-right')}</button></div>`;
+    } else if(state.tab==='configuration') html+=configurationPage(p);
+    else html+=demandPage(p);
+    return html+'</div>';
+  }
+  function failureNotice() {
+    const kept=state.active&&state.phase==='connected';
+    return `<div class="to-notice ${kept?'':'error'}" role="alert" style="margin-bottom:18px">${icon(kept?'triangle-alert':'circle-alert')}<div><strong>${state.failure==='handshake'?'WireGuard 握手超时':'代理暂时不可用'}</strong><p>${kept?'已按你的设置保留 WireGuard，当前不使用代理。':'已自动停止本次连接，并恢复连接前的网络与代理。'}</p><div class="to-row">${button(kept?'重试代理':'重新连接',kept?'retry-proxy':'retry')}${button('查看日志','view-logs','ghost')}</div></div></div>`;
+  }
+  function configurationPage(p) {
+    return `<div class="to-row" style="justify-content:space-between;margin-bottom:16px"><span class="to-caption">标准 WireGuard 配置，可导入、编辑与导出。</span>${button(icon('pencil')+'编辑配置','edit')}</div><section class="to-section" style="margin-top:0"><div class="to-section-heading"><h3>${icon('laptop')}接口</h3><span class="to-pill">WireGuard</span></div><div class="to-section-content"><dl class="to-details" style="margin-top:0"><div class="to-span-all"><dt>公钥</dt><dd class="to-key"><code>${state.showKey?'DEMO_PUBLIC_KEY_4bNfR2q9M_NOT_FOR_CONNECTION':'4bNfR2…q9M=（演示）'}</code><button class="to-icon-button cursor-interaction" data-action="copy-public" aria-label="复制演示公钥">${icon('copy')}</button></dd></div><div><dt>私钥</dt><dd>•••••••••••• ${button(state.showKey?'隐藏':'查看','show-key','ghost')}</dd></div><div><dt>监听端口</dt><dd>${esc(p.listen)}</dd></div><div><dt>IP 地址</dt><dd class="to-mono">${esc(p.address)}</dd></div><div><dt>MTU</dt><dd>${esc(p.mtu)}</dd></div><div class="to-span-all"><dt>DNS</dt><dd class="to-mono">${esc(p.dns)}</dd></div></dl>${state.showKey?'<p class="to-caption" style="margin-top:12px">演示私钥：DEMO_PRIVATE_KEY_NOT_FOR_REAL_CONNECTION</p>':''}</div></section>${p.peers.map((peer,i)=>`<section class="to-section"><div class="to-section-heading"><h3>${icon('server')}对端 ${i+1}</h3><span class="to-pill">${peer.psk?'已启用预共享密钥':'未使用预共享密钥'}</span></div><div class="to-section-content"><dl class="to-details" style="margin-top:0"><div><dt>端点</dt><dd class="to-mono">${esc(peer.endpoint)}</dd></div><div><dt>持续保活</dt><dd>${esc(peer.keepalive)} 秒</dd></div><div class="to-span-all"><dt>AllowedIPs</dt><dd class="to-mono">${esc(peer.allowed)}</dd></div><div class="to-span-all"><dt>对端公钥</dt><dd class="to-mono">${esc(peer.publicKey)}</dd></div></dl></div></section>`).join('')}<div class="to-row" style="justify-content:space-between;margin-top:18px">${button(icon('file-up')+'导出 .conf','export')}${button('复制配置','copy-config','ghost')}</div>`;
+  }
+  function demandPage(p) {
+    return `<section class="to-section" style="margin-top:0"><div class="to-section-heading"><div><h3>按需连接</h3><p class="to-subtitle">指定网络条件下自动连接这个隧道。</p></div>${toggle('ondemand',p.ondemand,'启用按需连接')}</div><div class="to-section-content"><div class="to-form-grid"><label class="to-check"><input type="checkbox" data-setting="wifi" ${p.wifi?'checked':''} ${!p.ondemand?'disabled':''}>Wi-Fi</label><label class="to-check"><input type="checkbox" data-setting="ethernet" ${p.ethernet?'checked':''} ${!p.ondemand?'disabled':''}>以太网</label><label class="to-field to-span-all">Wi-Fi 网络<select class="to-select" data-field="ssidMode" ${!p.ondemand?'disabled':''}><option value="all" ${p.ssidMode==='all'?'selected':''}>所有 Wi-Fi 网络</option><option value="only" ${p.ssidMode==='only'?'selected':''}>仅在指定网络连接</option><option value="exclude" ${p.ssidMode==='exclude'?'selected':''}>排除指定网络</option></select></label>${p.ssidMode!=='all'?`<label class="to-field to-span-all">Wi-Fi 名称（每行一个）<textarea class="to-textarea" data-setting="ssids" ${!p.ondemand?'disabled':''}>${esc(p.ssids)}</textarea></label>`:''}</div><div class="to-footnote">${icon('shuffle')}<span>自动连接同样遵循本隧道的“带入代理”设置。</span></div></div></section><div class="to-row" style="margin-top:18px">${button(icon('wifi')+'模拟符合条件的网络','demand-trigger','',!p.ondemand?'disabled':'')}${p.ondemand?'<span class="to-caption">规则已保存</span>':'<span class="to-caption">开启后可体验自动连接</span>'}</div>`;
+  }
+  function proxyPage() {
+    const p=current(), builtin=p.source==='builtin';
+    return header('代理配置','只打开隧行，就能使用 WireGuard 与规则代理。',button(icon('plus')+'导入配置','import-proxy'))+
+      `<div class="to-source-grid"><label class="to-radio-card cursor-interaction ${builtin?'selected':''}"><input type="radio" name="to-source" value="builtin" data-source-radio ${builtin?'checked':''}><div><strong>内置代理</strong><p>导入 Clash 兼容配置，无需另开客户端。</p></div></label><label class="to-radio-card cursor-interaction ${!builtin?'selected':''}"><input type="radio" name="to-source" value="local" data-source-radio ${!builtin?'checked':''}><div><strong>现有本机代理</strong><p>兼容 Clash Party 等已安装客户端。</p></div></label></div><p class="to-caption" style="margin-top:10px">当前隧道 ${esc(p.name)} 使用此配置来源。</p>`+
+      (builtin?`<section class="to-section"><div class="to-section-heading"><div><h3>${icon('file-check-2')}日常分流</h3><p class="to-subtitle">Clash 兼容配置 · 最近更新 ${esc(state.updated)}</p></div>${button(icon('refresh-cw')+'更新','update-proxy')}</div><div class="to-section-content"><div class="to-setting-row"><div><strong>代理模式</strong><p>规则分流会按配置决定直连或代理。</p></div><select class="to-select" data-field="proxyMode" aria-label="代理模式" style="width:auto"><option value="rule" ${state.proxyMode==='rule'?'selected':''}>规则分流</option><option value="global" ${state.proxyMode==='global'?'selected':''}>全局代理</option><option value="direct" ${state.proxyMode==='direct'?'selected':''}>全部直连</option></select></div><div class="to-list">${[['auto','自动优选','按延迟自动选择','推荐'],['jp','日本 · 东京','AnyTLS','38 ms'],['sg','新加坡 · SG','Hysteria2','62 ms'],['us','美国 · 洛杉矶','AnyTLS','148 ms']].map(([id,name,desc,latency])=>`<div class="to-list-row ${state.node===id?'selected':''}">${icon(id==='auto'?'sparkles':'globe')}<div class="to-grow"><span class="to-node-name">${name}</span><p>${desc}</p></div><span class="to-caption">${latency}</span><button class="to-icon-button cursor-interaction" data-node="${id}" aria-label="选择${name}" aria-pressed="${state.node===id}">${icon(state.node===id?'circle-check':'circle')}</button></div>`).join('')}</div></div></section><div class="to-footnote">${icon('lock-keyhole')}<span>订阅、节点与密钥保存在本机，不随 WireGuard 配置导出。</span></div>`:
+      `<section class="to-section"><div class="to-section-heading"><h3>${icon('plug')}本机代理地址</h3><span class="to-pill blue">兼容模式</span></div><div class="to-section-content"><div class="to-form-grid"><label class="to-field">主机<input class="to-input" id="to-local-host" value="${esc(state.localHost)}"></label><label class="to-field">端口<input class="to-input" id="to-local-port" type="number" min="1" max="65535" value="${esc(state.localPort)}"></label><label class="to-field to-span-all">协议<select class="to-select" id="to-local-protocol"><option value="mixed" ${state.localProtocol==='mixed'?'selected':''}>HTTP + SOCKS5（混合端口）</option><option value="http" ${state.localProtocol==='http'?'selected':''}>HTTP / HTTPS</option><option value="socks" ${state.localProtocol==='socks'?'selected':''}>SOCKS5</option></select></label></div><div class="to-setting-row" style="margin-top:17px"><div><strong>连接时自动打开 Clash Party</strong><p>连接前检查代理端口；应用在后台启动。</p></div>${toggle('autoLaunch',state.autoLaunch,'连接时自动打开 Clash Party')}</div><div class="to-row" style="margin-top:17px">${button('保存地址','save-local','primary')}${button('检测代理','test-local')}</div></div></section>`);
+  }
+  function logsPage() {
+    const logs=state.logs.filter(x=>state.logFilter==='all'||x.category===state.logFilter);
+    return header('连接日志','查看隧道、代理与网络恢复的完整过程。',button(icon('file-down')+'导出日志','export-logs'))+
+      `<div class="to-row" style="justify-content:space-between;margin-bottom:16px"><label class="to-field"><select class="to-select" data-field="logFilter" aria-label="日志筛选"><option value="all" ${state.logFilter==='all'?'selected':''}>所有事件</option><option value="隧道" ${state.logFilter==='隧道'?'selected':''}>仅 WireGuard</option><option value="代理" ${state.logFilter==='代理'?'selected':''}>仅代理</option><option value="恢复" ${state.logFilter==='恢复'?'selected':''}>仅网络恢复</option></select></label><span class="to-caption">密钥与订阅地址自动隐藏</span></div>`+
+      (logs.length?`<table class="to-table"><thead><tr><th>时间</th><th>类别</th><th>事件</th></tr></thead><tbody>${logs.slice(0,12).map(x=>`<tr><td class="to-mono">${esc(x.time)}</td><td><span class="${x.level==='error'?'to-log-error':x.level==='success'?'to-log-good':''}">${esc(x.category)}</span></td><td>${esc(x.message)}</td></tr>`).join('')}</tbody></table>`:`<div class="to-empty">${icon('scroll-text')}<p>还没有连接事件</p><p class="to-caption" style="margin-top:5px">连接一个隧道后，事件会显示在这里。</p></div>`);
+  }
+  function settingsPage() {
+    return header('设置','让连接方式适合你的日常使用。')+
+      `<section class="to-section" style="margin-top:0"><div class="to-section-heading"><h3>通用</h3></div><div class="to-section-content">${[['login','登录时启动隧行','启动应用后，按需连接规则自动接管。'],['menubar','在菜单栏显示','快速连接、断开及切换隧道。'],['closeBackground','关闭窗口后继续运行','已连接的隧道与代理保持运行。'],['updates','自动检查更新','有新版本时在应用内提醒。']].map(([key,title,desc])=>`<div class="to-setting-row"><div><strong>${title}</strong><p>${desc}</p></div>${toggle(key,state[key],title)}</div>`).join('')}</div></section><section class="to-section"><div class="to-section-heading"><h3>系统授权与配置</h3></div><div class="to-section-content"><div class="to-setting-row"><div><strong>VPN 网络扩展</strong><p>首次授权后，连接与代理随隧道自动应用。</p></div><span class="to-pill ${state.authorized?'good':'warn'}">${state.authorized?'已授权':'等待授权'}</span></div><div class="to-setting-row"><div><strong>密钥存储</strong><p>私钥和预共享密钥使用系统钥匙串保存。</p></div>${icon('lock-keyhole')}</div><div class="to-setting-row"><div><strong>配置导出</strong><p>默认仅导出 WireGuard 配置，代理订阅单独管理。</p></div>${button('导出全部','export-all')}</div></div></section><div class="to-row" style="justify-content:space-between;margin-top:20px"><span class="to-caption">隧行 1.0 · macOS</span>${button('功能范围与说明','about','ghost')}</div>`;
+  }
+  function render() {
+    const p=current();
+    root.dataset.density=state.density;
+    root.style.setProperty('--to-radius',state.roundness+'px');
+    root.querySelector('#to-tunnels').innerHTML=profiles.map(t=>{
+      const own=state.active===t.id;let text=own?(busy()?'连接中':state.appliedProxy?'隧道 + 代理':'仅隧道'):'未连接';
+      return `<button type="button" class="to-tunnel cursor-interaction ${state.page==='tunnel'&&state.selected===t.id?'selected':''}" data-tunnel="${t.id}" aria-pressed="${state.selected===t.id&&state.page==='tunnel'}">${icon('shield')}<span><span class="to-tunnel-name">${esc(t.name)}</span><span class="to-tunnel-meta"><span class="to-dot ${own?(state.failure?'warn':'good'):''}"></span>${text}</span></span></button>`;
+    }).join('');
+    root.querySelectorAll('[data-page]').forEach(el=>{el.classList.toggle('active',el.dataset.page===state.page);});
+    main.innerHTML=state.page==='proxy'?proxyPage():state.page==='logs'?logsPage():state.page==='settings'?settingsPage():tunnelPage();
+    const titleStatus=root.querySelector('#to-title-status');
+    titleStatus.innerHTML=`<span class="to-dot ${state.active?(state.failure?'warn':'good'):''}"></span>${state.active?(busy()?'正在连接':state.appliedProxy?'隧道 + 代理':'WireGuard 已连接'):'尚未连接'}`;
+    root.querySelector('#to-network-demo').disabled=!state.active||busy();
+    root.querySelector('#to-scenario').value=state.scenario;
+    root.querySelector('#to-footer-label').innerHTML=icon(state.active?'shield-check':'undo-2')+(state.active?'已保存连接前的网络代理快照':state.restoreMessage||'代理设置随隧道自动恢复');
+    renderSheet();icons();
+  }
+  function field(label,id,value,extra='') {return `<label class="to-field">${label}<input class="to-input" id="${id}" value="${esc(value)}" ${extra}></label>`;}
+  function editorForm() {
+    const p=state.editDraft||getProfile(state.editId)||current();
+    const peers=state.draftPeers||p.peers;
+    if(state.editorMode==='text')return `<label class="to-field">WireGuard 配置<textarea class="to-textarea to-mono" id="to-raw-config" style="min-height:275px" spellcheck="false">${esc(state.rawDraft||configText(p))}</textarea></label><p class="to-caption" style="margin-top:9px">演示配置不包含真实密钥。</p>`;
+    return `<div class="to-form-grid">${field('名称','to-edit-name',p.name)}${field('IP 地址（CIDR）','to-edit-address',p.address)}<label class="to-field to-span-all">私钥<div class="to-row"><input class="to-input to-mono" style="flex:1" id="to-edit-private" type="password" value="${demoKey}" aria-label="演示私钥">${button('重新生成','generate-key')}</div></label>${field('DNS 服务器','to-edit-dns',p.dns)}${field('MTU','to-edit-mtu',p.mtu)}${field('监听端口','to-edit-listen',p.listen)}</div>${peers.map((peer,i)=>`<hr class="to-divider"><div class="to-row" style="justify-content:space-between;margin-bottom:12px"><h3>对端 ${i+1}</h3>${peers.length>1?button('移除此对端','remove-peer','ghost',`data-peer="${i}"`):''}</div><div class="to-form-grid">${field('公钥',`to-peer-public-${i}`,peer.publicKey)}${field('端点',`to-peer-endpoint-${i}`,peer.endpoint)}<label class="to-field to-span-all">AllowedIPs<input class="to-input" id="to-peer-allowed-${i}" value="${esc(peer.allowed)}"></label>${field('持续保活（秒）',`to-peer-keepalive-${i}`,peer.keepalive)}<label class="to-check"><input type="checkbox" id="to-peer-psk-${i}" ${peer.psk?'checked':''}>使用预共享密钥</label></div>`).join('')}<div style="margin-top:15px">${button(icon('plus')+'添加对端','add-peer','ghost')}</div>`;
+  }
+  function renderSheet() {
+    if(!state.modal){sheetHost.innerHTML='';return;}
+    const p=current();let title='',body='',actions='';
+    const cancel=button('取消','close-modal');
+    if(state.modal==='add-menu'){
+      title='添加隧道';body=`<p>导入已有配置，或从空白配置开始。</p><div class="to-list"><div class="to-list-row">${icon('file-down')}<div class="to-grow"><strong>从文件导入</strong><p>支持单个 .conf 或包含多个隧道的 .zip。</p></div>${button('选择','import')}</div><div class="to-list-row">${icon('file-plus-2')}<div class="to-grow"><strong>新建空白隧道</strong><p>创建接口、密钥与一个或多个对端。</p></div>${button('新建','new-tunnel')}</div><div class="to-list-row">${icon('clipboard-paste')}<div class="to-grow"><strong>从剪贴板配置创建</strong><p>粘贴标准 WireGuard 配置。</p></div>${button('粘贴配置','paste-import')}</div></div>`;actions=button('完成','close-modal');
+    } else if(state.modal==='tunnel-menu'){
+      title='隧道操作';body=`<div class="to-list">${[['edit','pencil','编辑配置'],['duplicate','copy','复制隧道'],['export','file-up','导出当前隧道'],['delete','trash-2','删除隧道']].map(([action,glyph,label])=>`<div class="to-list-row">${icon(glyph)}<span class="to-grow">${label}</span>${button('选择',action)}</div>`).join('')}</div>`;actions=button('完成','close-modal');
+    } else if(state.modal==='import'){
+      title='导入 WireGuard 隧道';body=`<p>选择一种演示文件，体验导入与命名。</p><div class="to-source-grid"><label class="to-radio-card selected"><input type="radio" name="to-import-type" value="conf" checked><div><strong>home-example.conf</strong><p>单个 WireGuard 隧道</p></div></label><label class="to-radio-card"><input type="radio" name="to-import-type" value="zip"><div><strong>tunnels.zip</strong><p>两个 WireGuard 隧道</p></div></label></div><div style="margin-top:16px">${field('导入后的名称','to-import-name','Home WireGuard')}</div><div class="to-footnote">${icon('info')}<span>演示导入使用内置样本，不读取电脑文件。</span></div>`;actions=cancel+button('导入隧道','do-import','primary');
+    } else if(state.modal==='paste-import'){
+      title='从配置文本创建';body=`${field('隧道名称','to-paste-name','Imported Tunnel')}<label class="to-field" style="margin-top:14px">配置文本<textarea class="to-textarea to-mono" id="to-paste-config" style="min-height:210px" spellcheck="false">${esc(configText(profiles[0]||p))}</textarea></label>`;actions=cancel+button('创建隧道','do-paste-import','primary');
+    } else if(state.modal==='edit'){
+      title=state.isNew?'新建隧道':'编辑隧道';body=`<div class="to-tabs" role="tablist" aria-label="配置编辑方式"><button class="to-tab cursor-interaction ${state.editorMode==='form'?'active':''}" role="tab" aria-selected="${state.editorMode==='form'}" data-editor="form">表单编辑</button><button class="to-tab cursor-interaction ${state.editorMode==='text'?'active':''}" role="tab" aria-selected="${state.editorMode==='text'}" data-editor="text">配置文本</button></div>${editorForm()}`;actions=cancel+button('保存配置','save-edit','primary');
+    } else if(state.modal==='delete'){
+      title=`删除“${esc(p.name)}”？`;body=`<p>此操作会移除该隧道的本地配置。正在运行时，将先断开并恢复原网络代理。</p><p class="to-caption">原型中的删除只影响演示数据。</p>`;actions=cancel+button('删除隧道','do-delete','danger');
+    } else if(state.modal==='export'||state.modal==='export-all'){
+      const all=state.modal==='export-all';
+      title=all?'导出所有隧道':'导出 WireGuard 配置';body=`<p>${all?`将包含 ${profiles.length} 个隧道，正式版本以 .zip 导出。`:'标准 .conf 配置可在其他 WireGuard 客户端使用。'}</p><div class="to-notice" style="margin:0 0 14px">${icon('key-round')}<div>导出文件包含私钥，请妥善保存。<p>代理订阅与隧道的“带入代理”偏好不会混入 .conf 文件。</p></div></div><label class="to-field">导出预览<textarea class="to-textarea to-mono" id="to-export-text" style="min-height:190px" readonly>${esc(all?profiles.map(x=>`# ${x.name}.conf\n${configText(x)}`).join('\n\n'):configText(p))}</textarea></label>`;actions=button('关闭','close-modal')+button('复制演示配置','copy-export','primary');
+    } else if(state.modal==='import-proxy'){
+      title='导入代理配置';body=`<p>支持 Clash / Mihomo 兼容配置。首次导入后即可使用内置代理。</p><div class="to-form-grid">${field('配置名称','to-sub-name','日常分流')}<label class="to-field">导入方式<select class="to-select" id="to-sub-type"><option value="subscription">订阅链接</option><option value="file">配置文件</option></select></label><label class="to-field to-span-all">订阅链接或配置内容<textarea class="to-textarea" id="to-sub-content" placeholder="https://example.com/subscription" spellcheck="false"></textarea></label></div><div class="to-footnote">${icon('info')}<span>原型只演示导入流程，不发起订阅请求。</span></div>`;actions=cancel+button('使用演示配置','do-import-proxy','primary');
+    } else if(state.modal==='permission'){
+      title='允许隧行管理网络连接';body=`<p>首次使用需要系统批准 VPN 配置。授权后，每次连接会按隧道设置自动应用代理。</p><div class="to-list"><div class="to-list-row">${icon('shield-check')}<span>添加与管理 WireGuard 隧道</span></div><div class="to-list-row">${icon('shuffle')}<span>按开关为当前隧道应用代理</span></div><div class="to-list-row">${icon('undo-2')}<span>断开时恢复之前的代理设置</span></div></div><p class="to-caption" style="margin-top:13px">交互原型不会申请真实系统权限，也不会索要密码。</p>`;actions=button('暂不','close-modal')+button('允许并连接','grant-permission','primary');
+    } else if(state.modal==='proxy-change'){
+      title=current().proxy?'关闭当前连接的代理？':'为当前连接启用代理？';body=`<p>你可以立即应用，也可以只保存为下次连接的偏好。WireGuard 隧道会保持连接。</p>`;actions=cancel+button('下次连接生效','proxy-next')+button('立即应用','proxy-now','primary');
+    } else if(state.modal==='switch-tunnel'){
+      title='切换当前隧道？';body=`<p>将先断开 ${esc(getProfile(state.active)?.name||'当前隧道')} 并恢复原代理，再连接 ${esc(p.name)}。</p>`;actions=cancel+button('切换并连接','confirm-switch','primary');
+    } else if(state.modal==='reconnect'){
+      title='保存并重新连接？';body='<p>更改隧道配置需要重新连接。将先恢复原网络代理，再使用新配置建立连接。</p>';actions=button('稍后连接','close-modal')+button('重新连接','confirm-reconnect','primary');
+    } else if(state.modal==='menubar'){
+      title='菜单栏快捷操作';body=`<div class="to-list">${profiles.map(x=>`<div class="to-list-row">${icon('shield')}<div class="to-grow"><strong>${esc(x.name)}</strong><p>${x.proxy?'连接时带入代理':'仅 WireGuard'}</p></div>${button(state.active===x.id?'断开':'连接','menu-connect',state.active===x.id?'':'primary',`data-id="${x.id}"`)}</div>`).join('')}</div><div class="to-row" style="margin-top:16px">${button('打开主窗口','close-modal')}${button('暂停按需连接','pause-demand','ghost')}</div>`;actions=button('完成','close-modal');
+    } else if(state.modal==='export-logs'){
+      title='导出连接日志';body=`<p>私钥、预共享密钥与订阅链接已隐藏。</p><textarea class="to-textarea to-mono" id="to-export-text" style="min-height:220px" readonly>${esc(state.logs.length?state.logs.map(x=>`${x.time} [${x.category}] ${x.message}`).join('\n'):'暂无连接事件')}</textarea>`;actions=button('关闭','close-modal')+button('复制日志','copy-export','primary');
+    } else if(state.modal==='about'){
+      title='一个入口，管理隧道与代理';body=`<div class="to-list">${[['shield','WireGuard 隧道','创建、复制、删除、启停；配置文本与表单编辑；多个对端、密钥、DNS、MTU、监听端口、AllowedIPs 与持续保活。'],['folder-open','配置与导入导出','.conf / .zip 导入；从文本创建；单个与全部导出；连接状态、握手与收发流量。'],['wifi','原生使用方式','Wi-Fi 与以太网按需连接、SSID 包含或排除、菜单栏操作、连接日志、登录启动。'],['shuffle','可选的代理联动','每隧道独立开关；内置规则代理或已有本机代理；连接后验证；失败策略；断开恢复；网络变化后重新应用。']].map(([glyph,name,desc])=>`<div class="to-list-row" style="align-items:flex-start">${icon(glyph)}<div><strong>${name}</strong><p>${desc}</p></div>`).join('')}</div><p class="to-caption" style="margin-top:13px">产品设计原型，所有连接、延迟与流量均为演示数据。</p>`;actions=button('完成','close-modal','primary');
+    }
+    sheetHost.innerHTML=`<div class="to-overlay"><section class="to-sheet" role="dialog" aria-modal="true" aria-labelledby="to-sheet-title"><div class="to-sheet-head"><h2 id="to-sheet-title">${title}</h2><button class="to-icon-button cursor-interaction" data-action="close-modal" aria-label="关闭弹窗">${icon('x')}</button></div><div class="to-sheet-body">${state.modalError?`<p class="to-sheet-error" role="alert">${esc(state.modalError)}</p>`:''}${body}</div><div class="to-sheet-actions">${actions}</div></section></div>`;
+    requestAnimationFrame(()=>{
+      const sheet=sheetHost.querySelector('.to-sheet');
+      if(sheet)root.querySelector('.to-window').style.minHeight=(sheet.offsetHeight+105)+'px';
+    });
+  }
+  function setIdle(message='') {
+    runToken++;state.active=null;state.phase='idle';state.step=-1;state.appliedProxy=false;state.restoreMessage=message;
+  }
+  function disconnect(notify=true) {
+    const active=getProfile(state.active);
+    if(active){log('info','隧道',`已停止 ${active.name}`);if(state.appliedProxy||active.proxy)log('success','恢复','已恢复连接前的系统代理，并停止本次使用的代理服务。');}
+    setIdle('已恢复连接前的网络代理');state.failure=null;render();persist();
+    if(notify)toast('已断开隧道，原网络代理已恢复');
+  }
+  function requestConnect() {
+    if(state.active===state.selected){disconnect();return;}
+    if(state.active){showModal('switch-tunnel');return;}
+    if(state.scenario==='first-run'||!state.authorized){showModal('permission');return;}
+    startConnection();
+  }
+  function startConnection() {
+    closeModal();const p=current();if(!p)return;
+    if(!p.peers.length||!p.peers[0].endpoint){toast('请先填写对端地址');state.tab='configuration';render();return;}
+    state.active=p.id;state.phase='connecting';state.step=0;state.failure=null;state.restoreMessage='';
+    log('info','隧道',`开始连接 ${p.name}；已保存当前网络代理快照。`);
+    const labels=stepLabels(p), token=++runToken;
+    const advance=()=>{
+      if(token!==runToken)return;
+      if(state.step===1&&state.scenario==='handshake-fail'){failConnection('handshake');return;}
+      if(p.proxy&&state.step===2&&state.scenario==='proxy-fail'){failConnection('proxy');return;}
+      const step=state.step;
+      if(step===0)log('success','隧道','WireGuard 网络接口已建立。');
+      if(step===1)log('success','隧道','已收到对端握手响应。');
+      if(p.proxy&&step===2)log('success','代理',p.source==='builtin'?'内置代理已就绪，已加载日常分流配置。':`${state.autoLaunch?'已在后台打开 Clash Party；':''}本机代理端口检测通过。`);
+      if(p.proxy&&step===3)log('success','代理','代理已随当前隧道应用；HTTP / HTTPS / SOCKS 设置已确认。');
+      if(step<labels.length-1){state.step++;render();setTimeout(advance,550);return;}
+      state.phase='connected';state.step=labels.length;state.appliedProxy=p.proxy;
+      log('success','隧道',p.proxy?'验证通过：国内直连、国外代理均可访问。':'验证通过：WireGuard 网络连接正常。');
+      render();persist();toast(p.proxy?'已连接隧道并启用代理':'WireGuard 已连接');
+    };
+    render();persist();setTimeout(advance,450);
+  }
+  function failConnection(kind) {
+    const p=getProfile(state.active);state.failure=kind;
+    log('error',kind==='handshake'?'隧道':'代理',kind==='handshake'?'对端握手超时，隧道无法传输流量。':'代理服务未就绪，无法访问代理端口。');
+    if(kind==='proxy'&&p.failure==='keep'){
+      state.phase='connected';state.appliedProxy=false;state.step=-1;
+      log('info','隧道','按失败策略保留 WireGuard，未应用代理。');
+    } else {
+      setIdle('连接失败，原网络代理已恢复');state.failure=kind;
+      log('success','恢复','已停止本次隧道，恢复连接前的网络与代理。');
+    }
+    render();persist();
+  }
+  function applyProxy() {
+    const p=current();if(state.active!==p.id||state.phase!=='connected')return;
+    closeModal();state.phase='applying';const token=++runToken;
+    render();
+    setTimeout(()=>{
+      if(token!==runToken)return;
+      if(p.proxy&&state.scenario==='proxy-fail'){failConnection('proxy');return;}
+      state.phase='connected';state.appliedProxy=p.proxy;state.failure=null;
+      log('success','代理',p.proxy?'当前隧道的代理已启用并验证。':'已移除本次隧道代理，恢复连接前设置，WireGuard 保持连接。');
+      render();persist();toast(p.proxy?'代理已应用，隧道保持连接':'代理已关闭，隧道保持连接');
+    },850);
+  }
+  function openEditor(isNew=false) {
+    closeModal();
+    if(isNew) {
+      const id='new-'+nextId++;
+      state.editId=id;
+      state.newDraft={id,name:'Untitled',note:'新建隧道',address:'10.10.0.2/24',dns:'1.1.1.1',mtu:'自动',listen:'自动',proxy:false,source:'builtin',failure:'disconnect',ondemand:false,wifi:true,ethernet:false,ssidMode:'all',ssids:'',peers:[{endpoint:'vpn.example.com:51820',allowed:'0.0.0.0/0',keepalive:'25',publicKey:'DEMO_PEER_PUBLIC_KEY',psk:false}]};
+      profiles.push(state.newDraft);
+    } else state.editId=current().id;
+    state.editDraft=JSON.parse(JSON.stringify(getProfile(state.editId)));
+    state.isNew=isNew;state.editorMode='form';state.rawDraft=null;state.draftPeers=null;showModal('edit');
+  }
+  function readPeerDraft() {
+    const p=state.editDraft;const peers=state.draftPeers||p.peers;
+    return peers.map((x,i)=>({...x,publicKey:root.querySelector('#to-peer-public-'+i)?.value??x.publicKey,endpoint:root.querySelector('#to-peer-endpoint-'+i)?.value??x.endpoint,allowed:root.querySelector('#to-peer-allowed-'+i)?.value??x.allowed,keepalive:root.querySelector('#to-peer-keepalive-'+i)?.value??x.keepalive,psk:root.querySelector('#to-peer-psk-'+i)?.checked??x.psk}));
+  }
+  function preserveEditor() {
+    const p=state.editDraft;
+    if(state.editorMode==='form'){
+      for(const [key,id] of [['name','name'],['address','address'],['dns','dns'],['mtu','mtu'],['listen','listen']]) {
+        const el=root.querySelector('#to-edit-'+id); if(el)p[key]=el.value;
+      }
+      state.draftPeers=readPeerDraft();
+    } else state.rawDraft=root.querySelector('#to-raw-config')?.value||state.rawDraft;
+  }
+  function parseConfiguration(text,base) {
+    if(!text.includes('[Interface]')||!text.includes('[Peer]'))throw Error('配置必须包含 [Interface] 和至少一个 [Peer]。');
+    const value=(part,key,fallback='')=>part.match(new RegExp('^\\s*'+key+'\\s*=\\s*(.*)$','mi'))?.[1]?.trim()||fallback;
+    const sections=text.split(/\[Peer\]/i), part=sections[0];
+    return {...base,address:value(part,'Address',base.address),dns:value(part,'DNS',base.dns),mtu:value(part,'MTU','自动'),listen:value(part,'ListenPort','自动'),peers:sections.slice(1).map(s=>({publicKey:value(s,'PublicKey','DEMO_PEER_PUBLIC_KEY'),endpoint:value(s,'Endpoint'),allowed:value(s,'AllowedIPs'),keepalive:value(s,'PersistentKeepalive','0'),psk:!!value(s,'PresharedKey')}))};
+  }
+  function saveEditor() {
+    try{
+      const p=state.editDraft;
+      if(state.editorMode==='text')Object.assign(p,parseConfiguration(root.querySelector('#to-raw-config').value,p));
+      else {
+        preserveEditor();
+        if(!p.name.trim())throw Error('请填写隧道名称。');
+        if(!p.address.trim())throw Error('请填写接口 IP 地址。');
+        if(p.mtu!=='自动'&&(!/^\d+$/.test(p.mtu)||+p.mtu<576||+p.mtu>9000))throw Error('MTU 请输入 576–9000，或填写“自动”。');
+        if(p.listen!=='自动'&&(!/^\d+$/.test(p.listen)||+p.listen>65535))throw Error('监听端口请输入 0–65535，或填写“自动”。');
+        p.peers=state.draftPeers;
+      }
+      if(p.peers.some(x=>!x.endpoint||!x.allowed))throw Error('每个对端都需要填写端点和 AllowedIPs。');
+      Object.assign(getProfile(state.editId),p);
+      const reconnect=state.active===p.id;
+      state.selected=p.id;state.isNew=false;state.page='tunnel';state.tab='configuration';closeModal();render();persist();toast('隧道配置已保存');
+      if(reconnect)showModal('reconnect');
+    }catch(e){state.modalError=e.message;renderSheet();icons();}
+  }
+  async function copyText(text,success) {
+    try{await navigator.clipboard.writeText(text);toast(success);}catch{
+      const area=root.querySelector('#to-export-text');
+      if(area){area.focus();area.select();toast('文本已选中，可使用 ⌘C 复制');}else{showModal('export');icons();toast('已打开可复制的配置预览');}
+    }
+  }
+  const actions = {
+    'connect':requestConnect,'close-modal':()=>{
+      if(state.modal==='edit'&&state.isNew){
+        const index=profiles.findIndex(x=>x.id===state.editId);if(index>=0)profiles.splice(index,1);
+        state.isNew=false;
+      }
+      closeModal();render();
+    },
+    'add-menu':()=>showModal('add-menu'),'tunnel-menu':()=>showModal('tunnel-menu'),
+    'import':()=>showModal('import'),'paste-import':()=>showModal('paste-import'),
+    'new-tunnel':()=>openEditor(true),'edit':()=>openEditor(false),'save-edit':saveEditor,
+    'duplicate':()=>{const p=JSON.parse(JSON.stringify(current()));p.id='copy-'+nextId++;p.name+=' Copy';p.ondemand=false;profiles.push(p);state.selected=p.id;state.page='tunnel';closeModal();render();persist();toast('已复制隧道，按需连接默认关闭');},
+    'do-import':()=>{
+      const type=root.querySelector('input[name=to-import-type]:checked').value;
+      const name=root.querySelector('#to-import-name').value.trim();
+      if(!name){state.modalError='请填写隧道名称。';renderSheet();icons();return;}
+      const count=type==='zip'?2:1;
+      for(let i=0;i<count;i++){const p=JSON.parse(JSON.stringify(profiles[0]||current()));p.id='import-'+nextId++;p.name=name+(count>1?' '+(i+1):'');p.proxy=false;p.ondemand=false;p.note='已导入';profiles.push(p);if(i===0)state.selected=p.id;}
+      closeModal();state.page='tunnel';state.tab='overview';render();persist();toast(`已导入 ${count} 个隧道，代理默认关闭`);
+    },
+    'do-paste-import':()=>{
+      try{const name=root.querySelector('#to-paste-name').value.trim();if(!name)throw Error('请填写隧道名称。');const p=parseConfiguration(root.querySelector('#to-paste-config').value,JSON.parse(JSON.stringify(profiles[0]||current())));p.id='paste-'+nextId++;p.name=name;p.proxy=false;p.ondemand=false;profiles.push(p);state.selected=p.id;state.page='tunnel';state.tab='configuration';closeModal();render();persist();toast('已从文本创建隧道');}catch(e){state.modalError=e.message;renderSheet();icons();}
+    },
+    'delete':()=>showModal('delete'),'do-delete':()=>{
+      const id=current().id;if(state.active===id)disconnect(false);profiles.splice(profiles.findIndex(x=>x.id===id),1);state.selected=profiles[0]?.id;closeModal();render();persist();toast('演示隧道已删除');
+    },
+    'export':()=>showModal('export'),'export-all':()=>showModal('export-all'),
+    'copy-export':()=>copyText(root.querySelector('#to-export-text').value,'演示内容已复制'),
+    'copy-config':()=>copyText(configText(current()),'演示配置已复制'),
+    'copy-public':()=>copyText('DEMO_PUBLIC_KEY_NOT_FOR_REAL_CONNECTION','演示公钥已复制'),
+    'show-key':()=>{state.showKey=!state.showKey;render();},
+    'generate-key':()=>{const el=root.querySelector('#to-edit-private');if(el)el.value='DEMO_REGENERATED_KEY_'+nextId++;toast('已生成新的演示密钥');},
+    'add-peer':()=>{preserveEditor();state.draftPeers.push({endpoint:'',allowed:'',keepalive:'25',publicKey:'',psk:false});renderSheet();icons();},
+    'remove-peer':el=>{preserveEditor();state.draftPeers.splice(+el.dataset.peer,1);renderSheet();icons();},
+    'import-proxy':()=>showModal('import-proxy'),'do-import-proxy':()=>{current().source='builtin';state.updated='刚刚';closeModal();state.page='proxy';render();persist();toast('已载入演示代理配置');},
+    'update-proxy':()=>{state.updated='刚刚';log('success','代理','代理配置更新完成，保留当前节点选择。');render();toast('配置已更新（演示）');},
+    'save-local':()=>{const host=root.querySelector('#to-local-host').value.trim(),port=root.querySelector('#to-local-port').value;if(!host||!(/^\d+$/.test(port))||+port<1||+port>65535){toast('请输入主机和 1–65535 的有效端口');return;}state.localHost=host;state.localPort=port;state.localProtocol=root.querySelector('#to-local-protocol').value;persist();toast('本机代理地址已保存');},
+    'test-local':()=>{log(state.scenario==='proxy-fail'?'error':'success','代理',state.scenario==='proxy-fail'?'本机代理端口不可达。':'本机代理端口连通检查通过。');toast(state.scenario==='proxy-fail'?'检测失败：代理端口不可达（演示）':'本机代理连通检查通过（演示）');},
+    'grant-permission':()=>{state.authorized=true;state.scenario='normal';closeModal();startConnection();},
+    'proxy-next':()=>{current().proxy=!current().proxy;closeModal();render();persist();toast('已保存，下次连接生效');},
+    'proxy-now':()=>{current().proxy=!current().proxy;applyProxy();},
+    'apply-proxy':applyProxy,'retry-proxy':applyProxy,'retry':requestConnect,
+    'view-logs':()=>switchPage('logs'),'export-logs':()=>showModal('export-logs'),
+    'confirm-switch':()=>{disconnect(false);startConnection();},
+    'confirm-reconnect':()=>{disconnect(false);startConnection();},
+    'menubar':()=>showModal('menubar'),'menu-connect':el=>{state.selected=el.dataset.id;state.page='tunnel';closeModal();requestConnect();render();},
+    'pause-demand':()=>{state.demandBlocked=true;closeModal();toast('已暂停按需连接，手动连接仍可使用');},
+    'demand-trigger':()=>{if(state.demandBlocked){state.demandBlocked=false;toast('按需连接已恢复');}log('info','隧道','按需连接条件已满足，自动发起连接。');requestConnect();},
+    'network-change':()=>{
+      if(!state.active||busy())return;state.phase='reasserting';const token=++runToken;
+      log('info','隧道','检测到 Wi-Fi 网络变化，正在更新隧道。');render();
+      setTimeout(()=>{if(token!==runToken)return;state.phase='connected';if(state.appliedProxy)log('success','代理','已为新的网络会话重新应用代理配置。');log('success','隧道','网络恢复，连通检查通过。');render();persist();toast('网络已恢复，隧道和代理设置已重新确认');},1100);
+    },
+    'about':()=>showModal('about')
+  };
+  root.addEventListener('click', event=>{
+    const action=event.target.closest('[data-action]');
+    if(action&&!action.disabled){actions[action.dataset.action]?.(action);return;}
+    const tunnel=event.target.closest('[data-tunnel]');
+    if(tunnel){state.selected=tunnel.dataset.tunnel;state.page='tunnel';state.tab='overview';state.showKey=false;render();persist();return;}
+    const page=event.target.closest('[data-page]');
+    if(page){switchPage(page.dataset.page);return;}
+    const tab=event.target.closest('[data-tab]');
+    if(tab){state.tab=tab.dataset.tab;render();persist();return;}
+    const node=event.target.closest('[data-node]');
+    if(node){state.node=node.dataset.node;render();persist();toast('已切换代理节点');return;}
+    const editor=event.target.closest('[data-editor]');
+    if(editor){preserveEditor();state.editorMode=editor.dataset.editor;renderSheet();icons();}
+  });
+  root.addEventListener('change',event=>{
+    const el=event.target,p=current();
+    if(el.id==='to-scenario'){
+      state.scenario=el.value;if(el.value==='first-run')state.authorized=false;
+      if(state.phase==='idle')state.failure=null;
+      render();persist();return;
+    }
+    if(el.dataset.toggle){
+      const key=el.dataset.toggle;
+      if(key==='proxy'){
+        if(state.active===p.id&&state.phase==='connected'){el.checked=p.proxy;showModal('proxy-change');return;}
+        p.proxy=el.checked;
+      }else if(key==='ondemand')p.ondemand=el.checked;
+      else state[key]=el.checked;
+      render();persist();return;
+    }
+    if(el.dataset.sourceRadio!==undefined){p.source=el.value;render();persist();return;}
+    if(el.dataset.field){
+      const key=el.dataset.field;
+      if(['source','failure','ssidMode'].includes(key))p[key]=el.value;
+      else state[key]=el.value;
+      render();persist();return;
+    }
+    if(el.dataset.setting){p[el.dataset.setting]=el.type==='checkbox'?el.checked:el.value;persist();}
+  });
+  root.addEventListener('keydown',event=>{
+    if(event.key==='Escape'&&state.modal){event.preventDefault();actions['close-modal']();}
+    if(event.key==='Tab'&&state.modal){
+      const items=[...sheetHost.querySelectorAll('button:not(:disabled),input:not(:disabled),textarea:not(:disabled),select:not(:disabled)')];
+      const first=items[0],last=items[items.length-1];
+      if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}
+      else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
+    }
+    if((event.metaKey||event.ctrlKey)&&event.key==='s'&&state.modal==='edit'){event.preventDefault();saveEditor();}
+  });
+  render();
+  if(globalThis.Tweak){
+    const design={compact:false,roundness:12};
+    const tweaks=new Tweak({container:root,onChange:()=>{state.density=design.compact?'compact':'comfortable';state.roundness=design.roundness;root.dataset.density=state.density;root.style.setProperty('--to-radius',state.roundness+'px');}});
+    tweaks.addToggle(design,'compact',{label:'紧凑布局'});
+    tweaks.addSlider(design,'roundness',{label:'内容圆角',min:6,max:16,step:2,unit:'px'});
+  }
+})();
+</script>
+</body></html>

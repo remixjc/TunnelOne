@@ -1,0 +1,43 @@
+name: Signed Development Build
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: signed-development
+  cancel-in-progress: false
+jobs:
+  signed:
+    runs-on: macos-15
+    timeout-minutes: 60
+    environment: development-signing
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Import development signing assets
+        env:
+          CERTIFICATE_P12: ${{ secrets.APPLE_CERTIFICATE_P12 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APP_PROFILE: ${{ secrets.APPLE_APP_PROFILE }}
+          EXTENSION_PROFILE: ${{ secrets.APPLE_EXTENSION_PROFILE }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: python scripts/import_signing.py
+      - name: Build and test signed development application
+        run: |
+          brew install xcodegen
+          bash scripts/build.sh --signed
+          bash scripts/test.sh
+          codesign --verify --deep --strict build/DerivedData/Build/Products/Release/TunnelOne.app
+          ditto -c -k --keepParent build/DerivedData/Build/Products/Release/TunnelOne.app TunnelOne-development.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TunnelOne-signed-development
+          path: TunnelOne-development.zip
+          retention-days: 7
+      - name: Clean signing assets
+        if: always()
+        run: |
+          security delete-keychain "$RUNNER_TEMP/TunnelOne-signing.keychain-db" || true
+          rm -f Config/Signing.xcconfig

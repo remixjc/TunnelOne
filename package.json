@@ -1,0 +1,12 @@
+{
+  "name": "tunnelone-website",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "test:site": "node scripts/site.test.cjs"
+  },
+  "devDependencies": {
+    "lucide": "0.468.0",
+    "playwright": "1.65.0"
+  }
+}

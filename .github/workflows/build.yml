@@ -1,0 +1,72 @@
+name: macOS Build & Preview Release
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate release version
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: test "$RELEASE_TAG" = "v$(cat VERSION)"
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - uses: actions/cache@v4
+        with:
+          path: |
+            .cache/downloads
+            ~/go/pkg/mod
+          key: dependencies-${{ runner.os }}-${{ hashFiles('scripts/dependencies.lock.json', '**/go.sum') }}
+      - name: Build universal application
+        run: bash scripts/build.sh
+      - name: Test
+        run: bash scripts/test.sh
+      - name: Package preview
+        run: bash scripts/package.sh preview
+      - name: Collect corresponding sources
+        run: python scripts/collect_sources.py
+      - name: Checksums
+        run: |
+          cp docs/PREVIEW.txt dist/READ-ME-FIRST.txt
+          cd dist
+          shasum -a 256 *.dmg *.zip *.tar.gz > SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TunnelOne-universal-preview
+          path: dist/*
+          retention-days: 30
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: TunnelOne-universal-preview
+          path: dist
+      - name: Publish developer preview
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$RELEASE_TAG" dist/* \
+            --prerelease --title "TunnelOne $RELEASE_TAG · Developer Preview" \
+            --notes-file "docs/releases/$RELEASE_TAG.md"

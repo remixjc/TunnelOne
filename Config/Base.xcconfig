@@ -1,0 +1,5 @@
+APP_ID_MACOS = io.github.remixjc.TunnelOne
+CODE_SIGN_STYLE = Automatic
+APP_PROFILE =
+EXTENSION_PROFILE =
+#include? "Signing.xcconfig"
