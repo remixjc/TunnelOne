@@ -88,6 +88,8 @@ jobs:
           fi
       - name: Test
         run: bash scripts/test.sh
+      - name: Test sandboxed native WebKit UI
+        run: bash scripts/test_native_ui.sh
       - uses: actions/setup-node@v4
         with:
           node-version: "24"

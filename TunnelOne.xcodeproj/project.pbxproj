@@ -133,6 +133,7 @@
 		FAF7C8483723E98E64E670BC /* UnusableTunnelDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6009486FC6CF2491641B6E6 /* UnusableTunnelDetailViewController.swift */; };
 		FD99E68FBAE4ED2268939DC4 /* KeyValueRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDA019ECB2042058345F02FE /* KeyValueRow.swift */; };
 		FEC8B61B886484180E85968E /* NETunnelProviderProtocol+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7F2668DB3F6870B539FAEFB /* NETunnelProviderProtocol+Extension.swift */; };
+		FEEBB94DF29CB31F5F7E51EE /* TunnelOneWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 446F0396E85D6C9A7BAE4FAD /* TunnelOneWebView.swift */; };
 		FFCB46E337ED62291A26BBD1 /* ringlogger.c in Sources */ = {isa = PBXBuildFile; fileRef = 680B1399A79251F33D780E8C /* ringlogger.c */; };
 /* End PBXBuildFile section */
 
@@ -217,6 +218,7 @@
 		3F87DA820806190398498687 /* StatusMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusMenu.swift; sourceTree = "<group>"; };
 		402A2BC76670E2FA6D839DBC /* ErrorPresenterProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorPresenterProtocol.swift; sourceTree = "<group>"; };
 		41D66FDDD70EE986E01899A6 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/Localizable.strings; sourceTree = "<group>"; };
+		446F0396E85D6C9A7BAE4FAD /* TunnelOneWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TunnelOneWebView.swift; sourceTree = "<group>"; };
 		44C99DDED649723E9B7F3FCC /* TunnelOneUI */ = {isa = PBXFileReference; lastKnownFileType = folder; name = TunnelOneUI; path = Sources/WireGuardApp/Resources/TunnelOneUI; sourceTree = SOURCE_ROOT; };
 		464BE4767B4D06C90FDFDAF4 /* wireguard_doc_logo_320x320.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = wireguard_doc_logo_320x320.png; sourceTree = "<group>"; };
 		483FF51C2E2188F0B3260236 /* ErrorNotifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorNotifier.swift; sourceTree = "<group>"; };
@@ -666,6 +668,7 @@
 				25F4D2D3611B6916E0664743 /* LogViewCell.swift */,
 				1D925DB715773FEA75868880 /* OnDemandWiFiControls.swift */,
 				0FDF30B3873F86B3C6C7589C /* TunnelListRow.swift */,
+				446F0396E85D6C9A7BAE4FAD /* TunnelOneWebView.swift */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -935,6 +938,7 @@
 				8AE1C9113574EE4C317E8B88 /* TunnelImporter.swift in Sources */,
 				66E3A307C2124B3B1C6759CF /* TunnelListRow.swift in Sources */,
 				2F49001AED9C7B74D3BAFE4C /* TunnelOneViewController.swift in Sources */,
+				FEEBB94DF29CB31F5F7E51EE /* TunnelOneWebView.swift in Sources */,
 				86DA5F72BA707F2023CA59A1 /* TunnelStatus.swift in Sources */,
 				625E327EB49B669A4DE35228 /* TunnelViewModel.swift in Sources */,
 				51C68E7B6D5EEED4CCDAFC30 /* TunnelsListTableViewController.swift in Sources */,
@@ -1199,8 +1203,8 @@
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_PRECOMPILE_BRIDGING_HEADER = NO;
 				SWIFT_VERSION = 5.0;
-				VERSION_ID = 5;
-				VERSION_NAME = 0.2.1;
+				VERSION_ID = 6;
+				VERSION_NAME = 0.2.2;
 			};
 			name = Release;
 		};
@@ -1297,8 +1301,8 @@
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_PRECOMPILE_BRIDGING_HEADER = NO;
 				SWIFT_VERSION = 5.0;
-				VERSION_ID = 5;
-				VERSION_NAME = 0.2.1;
+				VERSION_ID = 6;
+				VERSION_NAME = 0.2.2;
 			};
 			name = Debug;
 		};

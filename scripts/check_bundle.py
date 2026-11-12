@@ -54,6 +54,7 @@ if args.signed:
         assert not entitlements.get("com.apple.security.get-task-allow", False)
         if bundle == app:
             assert entitlements.get("com.apple.developer.system-extension.install") is True
+            assert entitlements.get("com.apple.security.network.client") is True, "Sandboxed WebKit needs network-client permission"
         else:
             assert not entitlements.get("com.apple.security.app-sandbox", False), "Service uses root-owned storage"
         profile = plistlib.loads(subprocess.check_output(

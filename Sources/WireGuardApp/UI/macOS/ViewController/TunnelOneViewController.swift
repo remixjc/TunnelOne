@@ -4,7 +4,7 @@ import WebKit
 
 /// Uses the approved prototype's layout and CSS. All actions cross this narrow
 /// bridge to the existing native tunnel manager; the page has no network access.
-final class TunnelOneViewController: NSViewController, WKNavigationDelegate, TunnelEditViewControllerDelegate {
+final class TunnelOneViewController: NSViewController, TunnelEditViewControllerDelegate {
     private let manager: TunnelsManager
     private var webView: WKWebView!
     private var timer: Timer?
@@ -27,18 +27,11 @@ final class TunnelOneViewController: NSViewController, WKNavigationDelegate, Tun
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     override func loadView() {
-        let content = WKUserContentController()
-        content.add(TunnelOneMessageHandler(owner: self), name: "tunnelOne")
-        let configuration = WKWebViewConfiguration()
-        configuration.userContentController = content
-        configuration.websiteDataStore = .nonPersistent()
-        webView = WKWebView(frame: .zero, configuration: configuration)
-        webView.navigationDelegate = self
-        view = webView
-        if let directory = Bundle.main.resourceURL?.appendingPathComponent("TunnelOneUI"),
-           FileManager.default.fileExists(atPath: directory.appendingPathComponent("index.html").path) {
-            webView.loadFileURL(directory.appendingPathComponent("index.html"), allowingReadAccessTo: directory)
-        }
+        let content = TunnelOneWebView()
+        content.onMessage = { [weak self] in self?.receive($0) }
+        content.onReady = { [weak self] in self?.publish() }
+        webView = content.webView
+        view = content
         reloadTunnels()
     }
 
@@ -298,20 +291,4 @@ final class TunnelOneViewController: NSViewController, WKNavigationDelegate, Tun
         menu.popUp(positioning: nil, at: view.convert(view.window?.mouseLocationOutsideOfEventStream ?? .zero, from: nil), in: view)
     }
 
-    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) { publish() }
-    func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction,
-                 decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
-        let allowed = navigationAction.request.url?.isFileURL == true &&
-            navigationAction.request.url?.standardizedFileURL == Bundle.main.resourceURL?
-                .appendingPathComponent("TunnelOneUI/index.html").standardizedFileURL
-        decisionHandler(allowed ? .allow : .cancel)
-    }
-}
-
-private final class TunnelOneMessageHandler: NSObject, WKScriptMessageHandler {
-    weak var owner: TunnelOneViewController?
-    init(owner: TunnelOneViewController) { self.owner = owner }
-    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        owner?.receive(message)
-    }
 }
