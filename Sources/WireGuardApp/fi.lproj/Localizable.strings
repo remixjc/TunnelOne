@@ -334,7 +334,7 @@
 "macAppVersion (%@)" = "Sovelluksen versio: %@";
 "macGoBackendVersion (%@)" = "Go -moottorin versio: %@";
 "iosViewPrivateData" = "Todenna nähdäksesi tunnelin yksityiset avaimet.";
-"macConfirmAndQuitAlertQuitTunnelOne" = "Sulje TunnelOne";
+"macConfirmAndQuitAlertQuitWireGuard" = "Sulje TunnelOne";
 "macConfirmAndQuitAlertCloseWindow" = "Sulje tunneleiden hallinta";
 
 // Mac tooltip

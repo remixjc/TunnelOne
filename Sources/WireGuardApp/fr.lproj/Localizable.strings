@@ -408,7 +408,7 @@
 "macConfirmAndQuitAlertMessage" = "Voulez-vous fermer le gestionnaire de tunnels ou quitter TunnelOne complètement ?";
 "macConfirmAndQuitAlertInfo" = "Si vous fermez le gestionnaire de tunnels, TunnelOne continuera d'être disponible à partir de l'icône de la barre de menus.";
 "macConfirmAndQuitInfoWithActiveTunnel (%@)" = "Si vous fermez le gestionnaire de tunnels, TunnelOne continuera d'être disponible à partir de l'icône de la barre de menus.\n\nNotez que si vous quittez TunnelOne entièrement le tunnel actuellement actif ('%@') restera actif jusqu'à ce que vous le désactiviez de cette application ou via le panneau Réseau dans les Préférences Système.";
-"macConfirmAndQuitAlertQuitTunnelOne" = "Quitter TunnelOne";
+"macConfirmAndQuitAlertQuitWireGuard" = "Quitter TunnelOne";
 "macConfirmAndQuitAlertCloseWindow" = "Fermer le gestionnaire de tunnels";
 
 "macAppExitingWithActiveTunnelMessage" = "TunnelOne se termine avec un tunnel actif";

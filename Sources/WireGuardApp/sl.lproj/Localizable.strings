@@ -408,7 +408,7 @@
 "macConfirmAndQuitAlertMessage" = "Ali želite zapreti upravljalca tunelov ali končati TunnelOne v celoti?";
 "macConfirmAndQuitAlertInfo" = "Če zaprete upravljalca tunelov, bo TunnelOne še naprej na voljo preko ikone v meniju.";
 "macConfirmAndQuitInfoWithActiveTunnel (%@)" = "Če zaprete upravljalca tunelov, bo TunnelOne še naprej na voljo preko ikone v meniju.\n\nPomnite: če zaprete TunnelOne bo trenutni aktiven tunel (\"%@\") ostal aktiven dokler ga ne deaktivirate preko te aplikacije ali preko omrežne plošče v sistemskih nastavitvah.";
-"macConfirmAndQuitAlertQuitTunnelOne" = "Končaj TunnelOne";
+"macConfirmAndQuitAlertQuitWireGuard" = "Končaj TunnelOne";
 "macConfirmAndQuitAlertCloseWindow" = "Zapri upravljalca tunelov";
 
 "macAppExitingWithActiveTunnelMessage" = "TunnelOne se končuje z aktivnim tunelom";

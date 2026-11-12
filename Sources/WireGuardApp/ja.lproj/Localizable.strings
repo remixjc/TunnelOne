@@ -408,7 +408,7 @@
 "macConfirmAndQuitAlertMessage" = "トンネル管理画面を閉じますか？それともTunnelOne自体を終了しますか？";
 "macConfirmAndQuitAlertInfo" = "トンネル管理画面を閉じても、メニューバーアイコンからTunnelOneを操作できます。";
 "macConfirmAndQuitInfoWithActiveTunnel (%@)" = "トンネル管理画面を閉じても、メニューバーアイコンからTunnelOneを操作できます。\n\n注意：TunnelOne自体を終了しても、現在有効化済みのトンネル ('%@') はこのアプリケーションかシステム環境設定のネットワークパネルから無効化するまでは有効なままです。";
-"macConfirmAndQuitAlertQuitTunnelOne" = "TunnelOneを終了";
+"macConfirmAndQuitAlertQuitWireGuard" = "TunnelOneを終了";
 "macConfirmAndQuitAlertCloseWindow" = "トンネル管理画面を閉じる";
 
 "macAppExitingWithActiveTunnelMessage" = "有効化中のトンネルが残ったまま TunnelOne を終了しようとしています";

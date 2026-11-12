@@ -329,7 +329,7 @@
 
 "macExportPrivateData" = "برو‌ن‌بری کلید‌های خصوصی تونل";
 "macViewPrivateData" = "مشاهده کلید‌های خصوصی تونل";
-"macConfirmAndQuitAlertQuitTunnelOne" = "خروج از TunnelOne";
+"macConfirmAndQuitAlertQuitWireGuard" = "خروج از TunnelOne";
 "macConfirmAndQuitAlertCloseWindow" = "بستن مدیر تونل‌ها";
 
 // Mac tooltip

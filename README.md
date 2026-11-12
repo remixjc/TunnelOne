@@ -18,7 +18,7 @@
 
 TunnelOne 是面向 macOS 的原生 WireGuard 客户端。在 WireGuard 官方 Apple 客户端的基础上，为每个隧道增加「连接时带入代理」开关：只连接隧道，或同时启动内置 Mihomo，并把 HTTP/HTTPS 代理应用到该隧道的网络设置中。
 
-**当前版本：v0.1.0 开发预览。** 自动化已支持编译、通用架构打包、Pages 部署及预览发布。公开下载为未签名构建，**不能据此验证真实 VPN 连接，也不是可直接用于日常联网的正式版**。App Store 路线需要匹配的 Apple 签名和 profiles；Developer ID 直发路线还需要改为 System Extension 并完成公证。源码包含实际隧道与代理生命周期实现；真实联网验收仍需在正确签名的构建中完成。
+**当前版本：v0.1.1 开发预览。** 自动化已支持编译、通用架构打包、Pages 部署及预览发布。公开下载为未签名构建，**不能据此验证真实 VPN 连接，也不是可直接用于日常联网的正式版**。App Store 路线需要匹配的 Apple 签名和 profiles；Developer ID 直发路线还需要改为 System Extension 并完成公证。源码包含实际隧道与代理生命周期实现；真实联网验收仍需在正确签名的构建中完成。
 
 English: A native macOS WireGuard client with per-tunnel proxy preferences and a bundled Mihomo process. This release is an unsigned developer preview. Production VPN operation requires matching Apple signing, entitlements and provisioning profiles.
 
@@ -30,7 +30,7 @@ TunnelOne 把代理偏好保存在各自的 VPN 配置中，由 Network Extensio
 
 ## 功能与实现范围
 
-| 功能 | v0.1.0 实现 |
+| 功能 | v0.1.1 实现 |
 | --- | --- |
 | WireGuard 隧道管理 | 基于官方 macOS 客户端：新建、导入 `.conf` / ZIP、编辑、启停、删除、导出 |
 | 多对端与运行信息 | 公钥、地址、DNS、MTU、AllowedIPs、Endpoint、保活、握手与收发统计 |
@@ -151,8 +151,8 @@ bash scripts/build.sh --signed
 预览发布：
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.1.1
+git push origin v0.1.1
 ```
 
 后续版本先更新 `VERSION` 与 `project.yml`，添加 `docs/releases/<版本>.md`，再推送对应 tag。工作流拒绝版本不一致的发布，且不会把未签名预览标成正式版。

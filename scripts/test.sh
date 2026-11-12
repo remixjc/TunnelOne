@@ -9,3 +9,4 @@ go test ./...
 popd >/dev/null
 python3 scripts/check_site.py
 python3 scripts/check_version.py
+python3 scripts/check_localizations.py

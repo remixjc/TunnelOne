@@ -419,7 +419,7 @@
 "macConfirmAndQuitAlertMessage" = "Do you want to close the tunnels manager or quit TunnelOne entirely?";
 "macConfirmAndQuitAlertInfo" = "If you close the tunnels manager, TunnelOne will continue to be available from the menu bar icon.";
 "macConfirmAndQuitInfoWithActiveTunnel (%@)" = "If you close the tunnels manager, TunnelOne will continue to be available from the menu bar icon.\n\nNote that if you quit TunnelOne entirely the currently active tunnel ('%@') will still remain active until you deactivate it from this application or through the Network panel in System Preferences.";
-"macConfirmAndQuitAlertQuitTunnelOne" = "Quit TunnelOne";
+"macConfirmAndQuitAlertQuitWireGuard" = "Quit TunnelOne";
 "macConfirmAndQuitAlertCloseWindow" = "Close Tunnels Manager";
 
 "macAppExitingWithActiveTunnelMessage" = "TunnelOne is exiting with an active tunnel";

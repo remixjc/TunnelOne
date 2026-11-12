@@ -186,7 +186,7 @@
 "logViewTitle" = "Log";
 "alertInvalidPeerMessagePublicKeyInvalid" = "Peer’s public key must be a 32-byte key in base64 encoding";
 "tunnelOnDemandKey" = "On demand";
-"macConfirmAndQuitAlertQuitTunnelOne" = "Quit TunnelOne";
+"macConfirmAndQuitAlertQuitWireGuard" = "Quit TunnelOne";
 "alertSystemErrorOnRemoveTunnelTitle" = "Unable to remove tunnel";
 "macFieldOnDemand" = "On-Demand:";
 "macMenuCloseWindow" = "Close Window";

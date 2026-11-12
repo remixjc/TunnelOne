@@ -408,7 +408,7 @@
 "macConfirmAndQuitAlertMessage" = "Dorești să închizi managerul de tuneluri sau să ieși complet din TunnelOne?";
 "macConfirmAndQuitAlertInfo" = "Dacă închizi managerul de tuneluri, TunnelOne va fi în continuare disponibil din pictograma barei de meniu.";
 "macConfirmAndQuitInfoWithActiveTunnel (%@)" = "Dacă închizi managerul de tuneluri, TunnelOne va fi în continuare disponibil din pictograma barei de meniu.\n\nReține că dacă ieși complet din TunnelOne, tunelul activ în prezent („%@”) va rămâne activ până îl dezactivezi din această aplicație sau prin intermediul panoului Rețea din preferințele de sistem.";
-"macConfirmAndQuitAlertQuitTunnelOne" = "Ieși din TunnelOne";
+"macConfirmAndQuitAlertQuitWireGuard" = "Ieși din TunnelOne";
 "macConfirmAndQuitAlertCloseWindow" = "Închide managerul de tuneluri";
 
 "macAppExitingWithActiveTunnelMessage" = "TunnelOne iese cu un tunel activ";

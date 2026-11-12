@@ -329,7 +329,7 @@
 "macAlertEndpointInvalid (%@)" = "Endpoint ‘%@’ no es válido";
 "macAlertPersistentKeepliveInvalid (%@)" = "El valor keepalive persistente '%@' no es válido";
 "macAlertInfoUnrecognizedPeerKey" = "Las claves válidas son: ‘PublicKey’, ‘PresharedKey’, ‘AllowedIPs’, ‘Endpoint’ y ‘PersistentKeepalive’";
-"macConfirmAndQuitAlertQuitTunnelOne" = "Salir de TunnelOne";
+"macConfirmAndQuitAlertQuitWireGuard" = "Salir de TunnelOne";
 "macConfirmAndQuitAlertCloseWindow" = "Cerrar Gestor de túneles";
 
 // Mac tooltip

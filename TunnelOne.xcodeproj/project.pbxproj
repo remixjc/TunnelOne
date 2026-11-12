@@ -1135,8 +1135,8 @@
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_PRECOMPILE_BRIDGING_HEADER = NO;
 				SWIFT_VERSION = 5.0;
-				VERSION_ID = 1;
-				VERSION_NAME = 0.1.0;
+				VERSION_ID = 2;
+				VERSION_NAME = 0.1.1;
 			};
 			name = Release;
 		};
@@ -1233,8 +1233,8 @@
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_PRECOMPILE_BRIDGING_HEADER = NO;
 				SWIFT_VERSION = 5.0;
-				VERSION_ID = 1;
-				VERSION_NAME = 0.1.0;
+				VERSION_ID = 2;
+				VERSION_NAME = 0.1.1;
 			};
 			name = Debug;
 		};

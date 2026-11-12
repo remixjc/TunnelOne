@@ -408,7 +408,7 @@
 "macConfirmAndQuitAlertMessage" = "您想要关闭隧道管理器还是完全退出 TunnelOne？";
 "macConfirmAndQuitAlertInfo" = "如果您关闭了隧道管理器，可继续从菜单栏图标使用 TunnelOne 。";
 "macConfirmAndQuitInfoWithActiveTunnel (%@)" = "如果您关闭了隧道管理器，可继续从菜单栏图标使用 TunnelOne 。\n\n请注意，如果您完全退出 TunnelOne ，当前活动的隧道('%@')将仍然有效，直到您从此应用程序或通过系统偏好设置中的网络面板停用。";
-"macConfirmAndQuitAlertQuitTunnelOne" = "退出 TunnelOne";
+"macConfirmAndQuitAlertQuitWireGuard" = "退出 TunnelOne";
 "macConfirmAndQuitAlertCloseWindow" = "关闭隧道管理器";
 
 "macAppExitingWithActiveTunnelMessage" = "TunnelOne 正在退出，且还有一个激活的隧道。";

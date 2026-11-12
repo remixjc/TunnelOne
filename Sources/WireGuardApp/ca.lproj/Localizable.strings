@@ -191,7 +191,7 @@
 "macMenuSelectAll" = "Select All";
 "alertInvalidPeerMessagePublicKeyInvalid" = "Peer’s public key must be a 32-byte key in base64 encoding";
 "tunnelOnDemandCellular" = "Cellular";
-"macConfirmAndQuitAlertQuitTunnelOne" = "Quit TunnelOne";
+"macConfirmAndQuitAlertQuitWireGuard" = "Quit TunnelOne";
 "alertSystemErrorOnRemoveTunnelTitle" = "Unable to remove tunnel";
 "macFieldOnDemand" = "On-Demand:";
 "macMenuCloseWindow" = "Close Window";

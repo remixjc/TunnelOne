@@ -408,7 +408,7 @@
 "macConfirmAndQuitAlertMessage" = "Tünel yöneticisini kapatmak mı yoksa TunnelOne’dan tamamen çıkmak mı istiyorsunuz?";
 "macConfirmAndQuitAlertInfo" = "Tünel yöneticisini kapatırsanız, TunnelOne menü çubuğu simgesinden kullanılmaya devam edecektir.";
 "macConfirmAndQuitInfoWithActiveTunnel (%@)" = "Tünel yöneticisini kapatırsanız, TunnelOne menü çubuğu simgesinden kullanılmaya devam edecektir.\n\nTunnelOne’dan tamamen çıkarsanız, o anda aktif olan tünelin ('%@') siz bu uygulamadan veya Sistem Tercihlerindeki Ağ paneli aracılığıyla devre dışı bırakana kadar hâlâ etkin kalacağını unutmayın.";
-"macConfirmAndQuitAlertQuitTunnelOne" = "TunnelOne’dan Çık";
+"macConfirmAndQuitAlertQuitWireGuard" = "TunnelOne’dan Çık";
 "macConfirmAndQuitAlertCloseWindow" = "Tünel Yöneticisini Kapat";
 
 "macAppExitingWithActiveTunnelMessage" = "TunnelOne aktif bir tünelle çıkıyor";
