@@ -28,7 +28,7 @@ const { chromium } = require('playwright');
       publicKey: 'UI_TEST_PUBLIC_KEY', mtu: '1420', peers: [],
       onDemandEnabled: false, onDemandDescription: '未配置',
     };
-    const data = { tunnels: [tunnel], logs: [], message: '', version: '0.2.2', saving: false };
+    const data = { tunnels: [tunnel], logs: [], message: '', version: '0.2.3', saving: false };
     const update = () => page.evaluate(value => window.TunnelOne.update(value), data);
     await update();
     assert.equal(await page.locator('.to-sidebar').evaluate(el => el.getBoundingClientRect().width), 208);
@@ -49,6 +49,11 @@ const { chromium } = require('playwright');
     assert.equal(await page.getByText('国内直连与国外代理检查均通过。').count(), 0);
 
     tunnel.status = 'active'; tunnel.statusLabel = '已连接';
+    tunnel.report.stage = '检查国内直连与国外代理';
+    await update();
+    assert.equal(await page.locator('.to-status-title').innerText(), '正在验证连接');
+    assert.match(await page.locator('.to-status-detail').innerText(), /检查国内直连与国外代理/);
+    assert.equal(await page.getByText('国内直连与国外代理检查均通过。').count(), 0);
     tunnel.report = { time: 'fixture', stage: '连通性检查完成', result: 'connected-and-checked', checks: [
       { name: '国内直连', ok: true, http: '200' }, { name: '国外代理', ok: true, http: '204' }
     ] };
@@ -66,10 +71,14 @@ const { chromium } = require('playwright');
     tunnel.proxyEnabled = true;
     tunnel.status = 'inactive'; tunnel.statusLabel = '未连接';
     tunnel.report = { time: 'fixture', stage: '已自动断开本次 WireGuard，保留原有 Clash 代理',
-      result: 'failed', reason: '国外代理连通检查失败', checks: [{ name: '国外代理', ok: false, http: '000' }] };
+      result: 'failed', reason: '国外代理连通检查失败', checks: [
+        { name: '国外代理', ok: false, http: '000', exitCode: 7, detail: 'curl: (7) Failed to connect' }
+      ] };
     await update();
     assert.equal(await page.locator('.to-status-title').innerText(), '安全启动未完成');
     assert.equal(await page.getByText('隧道与代理已连接').count(), 0);
+    assert.equal(await page.getByText('失败 · HTTP 000').count(), 1);
+    assert.match(await page.locator('.to-footnote').allTextContents().then(values => values.join(' ')), /Failed to connect.*curl 7/);
     await page.getByRole('button', { name: '连接日志', exact: true }).click();
     assert.match(await page.locator('.to-table').innerText(), /尚无运行记录/);
     await page.getByRole('button', { name: '代理配置', exact: true }).click();

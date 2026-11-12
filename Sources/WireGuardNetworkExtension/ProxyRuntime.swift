@@ -23,7 +23,8 @@ final class ProxyRuntime {
         return proxy
     }
 
-    /// Runs after the WireGuard adapter installed its routes.
+    /// External mode checks the existing Clash port before WireGuard starts.
+    /// Built-in mode launches its core after WireGuard installs its routes.
     func start(_ settings: ProxySettings, profileData: Data?, uid: uid_t, gid: gid_t,
                interfaceName: String?, onUnexpectedExit: @escaping () -> Void,
                completion: @escaping (Error?) -> Void) {
@@ -77,9 +78,10 @@ final class ProxyRuntime {
                              completion: @escaping (Error?) -> Void) {
         guard generation == self.generation else { return }
         if Date() >= deadline || (settings.source == .builtIn && process?.isRunning != true) {
-            completion(NSError(domain: "TunnelOne.Proxy", code: 1, userInfo: [
-                NSLocalizedDescriptionKey: "代理启动或端口检查失败。隧道已回滚，请检查配置与端口占用。"
-            ]))
+            let message = settings.source == .external
+                ? "Clash 代理端口 \(settings.effectiveHost):\(settings.port) 未就绪，尚未启动 WireGuard。请确认 Clash Party 已启动且混合端口可连接。"
+                : "内置代理启动或端口检查失败，请检查配置与端口占用。"
+            completion(NSError(domain: "TunnelOne.Proxy", code: 1, userInfo: [NSLocalizedDescriptionKey: message]))
             return
         }
         let connection = NWConnection(host: NWEndpoint.Host(settings.effectiveHost),

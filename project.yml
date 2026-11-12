@@ -11,8 +11,8 @@ settings:
     CLANG_ENABLE_OBJC_ARC: YES
     ENABLE_USER_SCRIPT_SANDBOXING: NO
     ENABLE_HARDENED_RUNTIME: YES
-    VERSION_NAME: "0.2.2"
-    VERSION_ID: "6"
+    VERSION_NAME: "0.2.3"
+    VERSION_ID: "7"
     HEADER_SEARCH_PATHS:
       - $(SRCROOT)/Sources/Shared/Logging
       - $(SRCROOT)/Sources/WireGuardApp/ZipArchive/3rdparty/minizip

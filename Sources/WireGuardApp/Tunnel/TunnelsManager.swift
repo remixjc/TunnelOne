@@ -522,6 +522,7 @@ class TunnelsManager {
 
     func startDeactivation(of tunnel: TunnelContainer) {
         tunnel.isAttemptingActivation = false
+        tunnel.safetyActivationAttemptID = nil
         guard tunnel.status != .inactive && tunnel.status != .deactivating else { return }
         #if targetEnvironment(simulator)
         tunnel.status = .inactive
@@ -555,29 +556,21 @@ class TunnelsManager {
 
             wg_log(.debug, message: "Tunnel '\(tunnel.name)' connection status changed to '\(tunnel.tunnelProvider.connection.status)'")
 
-            if tunnel.isAttemptingActivation {
-                if session.status == .connected {
-                    tunnel.isAttemptingActivation = false
-                    self.activationDelegate?.tunnelActivationSucceeded(tunnel: tunnel)
-                } else if session.status == .disconnected {
-                    tunnel.isAttemptingActivation = false
-                    let proto = tunnelProvider.protocolConfiguration as? NETunnelProviderProtocol
-                    if let snapshot = proto?.providerConfiguration?[SystemExtensionConfiguration.snapshotKey] as? String {
-                        SystemExtensionClient.lastError(snapshot) { value in
-                            if let value = value, let error = PacketTunnelProviderError(rawValue: value) {
-                                let (title, message) = error.alertText
-                                self.activationDelegate?.tunnelActivationFailed(tunnel: tunnel, error: .activationFailedWithExtensionError(title: title, message: message, wasOnDemandEnabled: tunnelProvider.isOnDemandEnabled))
-                            } else {
-                                self.activationDelegate?.tunnelActivationFailed(tunnel: tunnel, error: .activationFailed(wasOnDemandEnabled: tunnelProvider.isOnDemandEnabled))
-                            }
-                        }
-                    } else {
-                        self.activationDelegate?.tunnelActivationFailed(tunnel: tunnel, error: .activationFailed(wasOnDemandEnabled: tunnelProvider.isOnDemandEnabled))
-                    }
-                }
+            if tunnel.isAttemptingActivation && session.status == .connected {
+                tunnel.isAttemptingActivation = false
+                self.activationDelegate?.tunnelActivationSucceeded(tunnel: tunnel)
             }
 
             if session.status == .disconnected {
+                // A safety failure can occur after macOS reports Connected.
+                // Keep its attempt ID until disconnect, and suppress user stops.
+                let wasAttempting = tunnel.isAttemptingActivation
+                let safetyAttempt = tunnel.safetyActivationAttemptID
+                tunnel.isAttemptingActivation = false
+                tunnel.safetyActivationAttemptID = nil
+                if wasAttempting || safetyAttempt != nil {
+                    self.reportActivationFailure(tunnel, wasAttempting: wasAttempting, safetyAttempt: safetyAttempt)
+                }
                 tunnel.onDeactivated?()
                 tunnel.onDeactivated = nil
             }
@@ -588,6 +581,38 @@ class TunnelsManager {
             }
 
             tunnel.refreshStatus()
+        }
+    }
+
+    private func reportActivationFailure(_ tunnel: TunnelContainer, wasAttempting: Bool, safetyAttempt: String?) {
+        let proto = tunnel.tunnelProvider.protocolConfiguration as? NETunnelProviderProtocol
+        guard let snapshot = proto?.providerConfiguration?[SystemExtensionConfiguration.snapshotKey] as? String else {
+            if wasAttempting {
+                activationDelegate?.tunnelActivationFailed(tunnel: tunnel, error: .activationFailed(wasOnDemandEnabled: tunnel.isActivateOnDemandEnabled))
+            }
+            return
+        }
+        let attempt = tunnel.activationAttemptId
+        SystemExtensionClient.safetyReport(snapshot) { [weak self] report in
+            guard let self = self, tunnel.activationAttemptId == attempt else { return }
+            if let report = report, report.activationAttemptID == safetyAttempt, safetyAttempt != nil,
+               ["preflight-failed", "failed", "rollback-failed"].contains(report.result),
+               let reason = report.reason {
+                self.activationDelegate?.tunnelActivationFailed(tunnel: tunnel, error: .activationFailedWithExtensionError(
+                    title: "安全启动未完成", message: reason + "\n\n" + report.stage,
+                    wasOnDemandEnabled: tunnel.isActivateOnDemandEnabled))
+            } else if wasAttempting {
+                SystemExtensionClient.lastError(snapshot) { value in
+                    guard tunnel.activationAttemptId == attempt else { return }
+                    if let value = value, let error = PacketTunnelProviderError(rawValue: value) {
+                        let (title, message) = error.alertText
+                        self.activationDelegate?.tunnelActivationFailed(tunnel: tunnel, error: .activationFailedWithExtensionError(
+                            title: title, message: message, wasOnDemandEnabled: tunnel.isActivateOnDemandEnabled))
+                    } else {
+                        self.activationDelegate?.tunnelActivationFailed(tunnel: tunnel, error: .activationFailed(wasOnDemandEnabled: tunnel.isActivateOnDemandEnabled))
+                    }
+                }
+            }
         }
     }
 
@@ -650,6 +675,7 @@ class TunnelContainer: NSObject {
         }
     }
     var activationAttemptId: String?
+    var safetyActivationAttemptID: String?
     var activationTimer: Timer?
     var deactivationTimer: Timer?
     var onDeactivated: (() -> Void)?
@@ -754,11 +780,17 @@ class TunnelContainer: NSObject {
             isAttemptingActivation = true
             let activationAttemptId = UUID().uuidString
             self.activationAttemptId = activationAttemptId
+            if let proxy = try? readProxySettings(), proxy.enabled, proxy.source == .external {
+                safetyActivationAttemptID = activationAttemptId
+            } else {
+                safetyActivationAttemptID = nil
+            }
             try (tunnelProvider.connection as? NETunnelProviderSession)?.startTunnel(options: ["activationAttemptId": activationAttemptId])
             wg_log(.debug, staticMessage: "startActivation: Success")
             activationDelegate?.tunnelActivationAttemptSucceeded(tunnel: self)
         } catch let error {
             isAttemptingActivation = false
+            safetyActivationAttemptID = nil
             guard let systemError = error as? NEVPNError else {
                 wg_log(.error, message: "Failed to activate tunnel: Error: \(error)")
                 status = .inactive

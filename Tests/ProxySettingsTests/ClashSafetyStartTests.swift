@@ -13,6 +13,12 @@ final class ClashSafetyStartTests: XCTestCase {
         var applyWrites = true
         var directOK = true, proxyOK = true
         var attempted: [Bool] = []
+        var connected = true
+        var connectedAfterPauses = 0
+        var pauses = 0
+        var onPause: (() -> Void)?
+        var connectedChecks: [String] = []
+        var probeError: Error?
         let lock = NSLock()
         static let proxy: [String: Any] = [
             "HTTPEnable": 1, "HTTPProxy": "127.0.0.1", "HTTPPort": 7890,
@@ -31,12 +37,17 @@ final class ClashSafetyStartTests: XCTestCase {
             if applyWrites { effective = value }
         }
         func ipv4RouteInterface() throws -> String { route }
+        func tunnelConnected(interface: String) throws -> Bool {
+            connectedChecks.append(interface)
+            return connected && pauses >= connectedAfterPauses
+        }
         func probe(proxy: Bool) throws -> SafetyProbe {
             lock.lock(); attempted.append(proxy); lock.unlock()
+            if let error = probeError { throw error }
             let ok = proxy ? proxyOK : directOK
             return SafetyProbe(name: proxy ? "国外代理" : "国内直连", ok: ok, http: ok ? (proxy ? "204" : "200") : "000")
         }
-        func pause() {}
+        func pause() { pauses += 1; onPause?() }
         func connect() { service = "temporary-vpn"; interface = "utun12"; effective = [:] }
     }
 
@@ -156,8 +167,80 @@ final class ClashSafetyStartTests: XCTestCase {
         environment.connect()
         var cancelled = false
         XCTAssertThrowsError(try policy.verify(preparation, interface: "utun12",
-            isCancelled: { cancelled }, progress: { _ in cancelled = true }))
+            isCancelled: { cancelled }, progress: { if $0 == "同步隧道代理" { cancelled = true } }))
         XCTAssertTrue(environment.writes.isEmpty)
         XCTAssertTrue(environment.attempted.isEmpty)
+    }
+
+    func testWaitsForSystemConnectedThenOneSecondBeforeAnyMutationOrProbe() throws {
+        let environment = Environment()
+        let policy = ClashSafetyStart(environment: environment)
+        let preparation = try policy.prepare()
+        environment.connect()
+        environment.connectedAfterPauses = 3
+        environment.onPause = {
+            XCTAssertTrue(environment.writes.isEmpty)
+            XCTAssertTrue(environment.attempted.isEmpty)
+        }
+        let report = try policy.verify(preparation, interface: "utun12")
+        XCTAssertEqual(report.result, "connected-and-checked")
+        XCTAssertEqual(environment.pauses, 7) // 3 connection polls + four 250ms settling pauses
+        XCTAssertEqual(environment.connectedChecks, Array(repeating: "utun12", count: 5))
+    }
+
+    func testConnectedTimeoutCannotSyncProxyOrProbe() throws {
+        let environment = Environment()
+        let policy = ClashSafetyStart(environment: environment)
+        let preparation = try policy.prepare()
+        environment.connect()
+        environment.connected = false
+        XCTAssertThrowsError(try policy.verify(preparation, interface: "utun12")) {
+            XCTAssertTrue($0.localizedDescription.contains("Connected 超时"))
+        }
+        XCTAssertEqual(environment.pauses, 120)
+        XCTAssertTrue(environment.writes.isEmpty)
+        XCTAssertTrue(environment.attempted.isEmpty)
+    }
+
+    func testDisconnectOrCancellationDuringSettlingCannotSyncOrProbe() throws {
+        for cancel in [false, true] {
+            let environment = Environment()
+            let policy = ClashSafetyStart(environment: environment)
+            let preparation = try policy.prepare()
+            environment.connect()
+            var cancelled = false
+            environment.onPause = {
+                if cancel { cancelled = true } else { environment.connected = false }
+            }
+            XCTAssertThrowsError(try policy.verify(preparation, interface: "utun12",
+                                                   isCancelled: { cancelled }))
+            XCTAssertTrue(environment.writes.isEmpty)
+            XCTAssertTrue(environment.attempted.isEmpty)
+        }
+    }
+
+    func testProbeExceptionsPreserveSpecificFailureAndBothTargetsRun() throws {
+        let environment = Environment()
+        let policy = ClashSafetyStart(environment: environment)
+        let preparation = try policy.prepare()
+        environment.connect()
+        environment.probeError = ClashSafetyStart.Failure("无法启动 curl：测试错误")
+        let report = try policy.verify(preparation, interface: "utun12")
+        XCTAssertEqual(report.result, "failed")
+        XCTAssertEqual(environment.attempted.count, 2)
+        XCTAssertTrue(report.reason?.contains("无法启动 curl：测试错误") == true)
+    }
+
+    func testDiagnosticsRoundTripAndOlderReportsStillDecode() throws {
+        let probe = SafetyProbe(name: "国内直连", ok: false, http: "000", exitCode: 7,
+                                detail: "curl: (7) Failed to connect")
+        XCTAssertEqual(try JSONDecoder().decode(SafetyProbe.self, from: JSONEncoder().encode(probe)), probe)
+        XCTAssertTrue(probe.failureDescription.contains("curl 7"))
+        XCTAssertTrue(probe.failureDescription.contains("Failed to connect"))
+        let old = Data(#"{"time":"fixture","stage":"旧报告","result":"failed","checks":[{"name":"国内直连","ok":false,"http":"000"}]}"#.utf8)
+        let report = try JSONDecoder().decode(SafetyStartReport.self, from: old)
+        XCTAssertNil(report.activationAttemptID)
+        XCTAssertNil(report.checks.first?.exitCode)
+        XCTAssertNil(report.checks.first?.detail)
     }
 }

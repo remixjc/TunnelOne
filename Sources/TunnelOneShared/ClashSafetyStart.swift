@@ -11,6 +11,7 @@ public protocol ClashSafetyEnvironment {
     func proxyDictionary(key: String) throws -> [String: Any]?
     func setProxyDictionary(_ value: [String: Any], service: String) throws
     func ipv4RouteInterface() throws -> String
+    func tunnelConnected(interface: String) throws -> Bool
     func probe(proxy: Bool) throws -> SafetyProbe
     func pause()
 }
@@ -19,8 +20,16 @@ public struct SafetyProbe: Codable, Equatable {
     public let name: String
     public let ok: Bool
     public let http: String
-    public init(name: String, ok: Bool, http: String) {
+    public let exitCode: Int32?
+    public let detail: String?
+    public init(name: String, ok: Bool, http: String, exitCode: Int32? = nil, detail: String? = nil) {
         self.name = name; self.ok = ok; self.http = http
+        self.exitCode = exitCode; self.detail = detail
+    }
+    public var failureDescription: String {
+        let code = exitCode.map { "，curl \($0)" } ?? ""
+        return "\(name)未通过（HTTP \(http.isEmpty ? "000" : http)\(code)）" +
+            (detail.flatMap { $0.isEmpty ? nil : "：\($0)" } ?? "")
     }
 }
 
@@ -35,6 +44,7 @@ public struct SafetyStartReport: Codable {
     public var reason: String?
     public var checks: [SafetyProbe] = []
     public var proxySync: String?
+    public var activationAttemptID: String?
     public init() {}
 }
 
@@ -93,7 +103,9 @@ public struct ClashSafetyStart {
         throw Failure("找不到可复制的 Clash 代理配置，尚未启动 WireGuard。")
     }
 
-    /// Called after routes are installed. Every mutation is scoped to this
+    /// Called after the provider reports that its adapter is ready. Wait for the
+    /// system's Connected state before the command's one-second settling delay.
+    /// Every mutation is scoped to this
     /// adapter's actual temporary service; Setup/preferences are never written.
     public func verify(_ preparation: Preparation, interface: String,
                        isCancelled: () -> Bool = { false },
@@ -103,6 +115,23 @@ public struct ClashSafetyStart {
         }
         try checkCancellation()
         guard interface.hasPrefix("utun") else { throw Failure("无法确定本次 WireGuard 接口。") }
+        progress("等待系统确认 WireGuard 已连接")
+        var connected = false
+        for _ in 0..<120 {
+            try checkCancellation()
+            if try environment.tunnelConnected(interface: interface) { connected = true; break }
+            environment.pause()
+        }
+        guard connected else { throw Failure("等待系统确认 WireGuard Connected 超时。") }
+        progress("WireGuard 已连接，等待网络稳定")
+        for _ in 0..<4 {
+            try checkCancellation()
+            environment.pause()
+        }
+        try checkCancellation()
+        guard try environment.tunnelConnected(interface: interface) else {
+            throw Failure("WireGuard 在联网检查前已断开。")
+        }
         guard try environment.ipv4RouteInterface() == interface else {
             throw Failure("WireGuard 未接管 IPv4 上网路由。")
         }
@@ -136,8 +165,12 @@ public struct ClashSafetyStart {
         for proxy in [false, true] {
             group.enter()
             DispatchQueue.global(qos: .utility).async {
-                let result = (try? self.environment.probe(proxy: proxy)) ??
-                    SafetyProbe(name: proxy ? "国外代理" : "国内直连", ok: false, http: "")
+                let result: SafetyProbe
+                do { result = try self.environment.probe(proxy: proxy) }
+                catch {
+                    result = SafetyProbe(name: proxy ? "国外代理" : "国内直连", ok: false,
+                                         http: "000", detail: error.localizedDescription)
+                }
                 lock.lock(); probes[proxy] = result; lock.unlock()
                 group.leave()
             }
@@ -147,7 +180,9 @@ public struct ClashSafetyStart {
         report.checks = [probes[false]!, probes[true]!]
         report.stage = "连通性检查完成"
         report.result = report.checks.allSatisfy(\.ok) ? "connected-and-checked" : "failed"
-        if report.result == "failed" { report.reason = "连通检查未通过，已停止本次 WireGuard 连接。" }
+        if report.result == "failed" {
+            report.reason = report.checks.filter { !$0.ok }.map(\.failureDescription).joined(separator: "\n")
+        }
         return report
     }
 }

@@ -57,34 +57,63 @@ final class MacClashSafetyEnvironment: ClashSafetyEnvironment {
         return result.output[range].split(whereSeparator: \.isWhitespace).last.map(String.init) ?? ""
     }
 
+    func tunnelConnected(interface: String) throws -> Bool {
+        // The primary service is a temporary NE service, not the saved VPN ID.
+        // Match the adapter's interface against the saved connections' status.
+        guard let preferences = SCPreferencesCreate(nil, "TunnelOne.SafeStart" as CFString, nil),
+              let services = SCNetworkServiceCopyAll(preferences) as? [SCNetworkService] else { return false }
+        for service in services {
+            guard let id = SCNetworkServiceGetServiceID(service),
+                  let connection = SCNetworkConnectionCreateWithServiceID(nil, id, nil, nil),
+                  SCNetworkConnectionGetStatus(connection) == .connected,
+                  let status = SCNetworkConnectionCopyExtendedStatus(connection) as? [String: Any],
+                  let ipv4 = status["IPv4"] as? [String: Any],
+                  ipv4["InterfaceName"] as? String == interface else { continue }
+            return true
+        }
+        return false
+    }
+
     func probe(proxy: Bool) throws -> SafetyProbe {
         let options = proxy ? ["--noproxy", "", "--proxy", "http://127.0.0.1:7890"] : ["--noproxy", "*"]
         let url = proxy ? "https://www.google.com/generate_204" : "https://www.baidu.com"
         let result = try command("/usr/bin/curl", [
-            "--disable", "--silent", "--output", "/dev/null", "--connect-timeout", "4",
+            "--disable", "--silent", "--show-error", "--output", "/dev/null", "--connect-timeout", "4",
             "--max-time", "7", "--write-out", "%{http_code}"
         ] + options + [url], timeout: 9)
         let code = result.output.trimmingCharacters(in: .whitespacesAndNewlines)
         return SafetyProbe(name: proxy ? "国外代理" : "国内直连",
-                           ok: result.status == 0 && (200..<400).contains(Int(code) ?? 0), http: code)
+                           ok: result.status == 0 && (200..<400).contains(Int(code) ?? 0), http: code,
+                           exitCode: result.status, detail: result.error.isEmpty ? nil : result.error)
     }
 
     func pause() { Thread.sleep(forTimeInterval: 0.25) }
 
-    private func command(_ executable: String, _ args: [String], timeout: TimeInterval) throws -> (status: Int32, output: String) {
+    private func command(_ executable: String, _ args: [String], timeout: TimeInterval) throws -> (status: Int32, output: String, error: String) {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: executable)
         process.arguments = args
         process.environment = ["PATH": "/usr/bin:/bin:/usr/sbin:/sbin", "HOME": "/var/empty"]
         let output = Pipe()
+        let errors = Pipe()
         process.standardOutput = output
-        process.standardError = FileHandle.nullDevice
+        process.standardError = errors
         try process.run()
+        let readers = DispatchGroup()
+        var errorData = Data()
+        readers.enter()
+        DispatchQueue.global(qos: .utility).async {
+            errorData = errors.fileHandleForReading.readDataToEndOfFile()
+            readers.leave()
+        }
         let deadline = DispatchWorkItem { if process.isRunning { process.terminate() } }
         DispatchQueue.global().asyncAfter(deadline: .now() + timeout, execute: deadline)
         let data = output.fileHandleForReading.readDataToEndOfFile()
         process.waitUntilExit()
+        readers.wait()
         deadline.cancel()
-        return (process.terminationStatus, String(data: data, encoding: .utf8) ?? "")
+        return (process.terminationStatus, String(data: data, encoding: .utf8) ?? "",
+                String((String(data: errorData, encoding: .utf8) ?? "")
+                    .trimmingCharacters(in: .whitespacesAndNewlines).prefix(2048)))
     }
 }

@@ -1,6 +1,6 @@
 {
   "name": "tunnelone-website",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "private": true,
   "scripts": {
     "test:site": "node scripts/site.test.cjs",

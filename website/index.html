@@ -30,10 +30,10 @@
         <h1>一次连接，<br>网络<span class="mint">各就其位。</span></h1>
         <p class="hero-description">WireGuard 负责隧道，Mihomo 负责代理。<br>打开一个客户端，就能让它们一起工作。</p>
         <div class="hero-actions">
-          <a class="button primary" href="https://github.com/remixjc/TunnelOne/releases/tag/v0.2.2"><span aria-hidden="true">↓</span> 下载 Beta</a>
+          <a class="button primary" href="https://github.com/remixjc/TunnelOne/releases/tag/v0.2.3"><span aria-hidden="true">↓</span> 下载 Beta</a>
           <a class="button secondary" href="prototype.html">体验交互原型 <span aria-hidden="true">↗</span></a>
         </div>
-        <p class="download-note">v0.2.2 · macOS 13+ · Apple Silicon &amp; Intel</p>
+        <p class="download-note">v0.2.3 · macOS 13+ · Apple Silicon &amp; Intel</p>
         <div class="preview-note"><span class="tiny-tag">BETA</span><p>系统扩展架构，支持 Developer ID 签名与 Apple 公证发布。请选择 Release 中的 signed 安装包；实际联网及多用户验收仍在进行。<a href="https://github.com/remixjc/TunnelOne#开发与构建">查看构建说明 ↗</a></p></div>
       </div>
 
@@ -87,7 +87,7 @@
     <section class="faq section" id="faq">
       <div><p class="eyebrow">GOOD TO KNOW</p><h2>开始前，<br>你可能想知道。</h2></div>
       <div class="faq-list">
-        <details><summary>现在可以直接安装后日常使用吗？<span>+</span></summary><p>v0.2.2 已采用 System Extension 架构，发布流水线支持签名、Apple 公证和通用架构 DMG。请选择 signed 安装包，并在系统设置允许网络扩展。当前仍为 Beta，真实联网、休眠恢复和多用户验收结果见项目测试清单；preview 包用于开发，不能代替签名版本。</p></details>
+        <details><summary>现在可以直接安装后日常使用吗？<span>+</span></summary><p>v0.2.3 已采用 System Extension 架构，发布流水线支持签名、Apple 公证和通用架构 DMG。请选择 signed 安装包，并在系统设置允许网络扩展。当前仍为 Beta，真实联网、休眠恢复和多用户验收结果见项目测试清单；preview 包用于开发，不能代替签名版本。</p></details>
         <details><summary>还需要单独运行 Clash Party 吗？<span>+</span></summary><p>内置模式包含 Mihomo 核心，导入 YAML 后随隧道启动，无需 Clash Party。外部代理模式则需要已有代理服务处于运行状态，其节点和出站策略由该服务管理。</p></details>
         <details><summary>“带入代理”会代理所有应用吗？<span>+</span></summary><p>它通过隧道的系统 HTTP/HTTPS 代理设置工作，影响遵循系统代理的应用。忽略系统代理的程序、UDP 和游戏流量不在这一开关的保证范围内；WireGuard 路由仍由 AllowedIPs 决定。</p></details>
         <details><summary>我的私钥和节点配置在哪里？<span>+</span></summary><p>WireGuard 私钥由系统钥匙串存储。代理 YAML 保存在本机 App Group 容器内，仅本地应用和扩展使用。项目没有账户或遥测服务。请将导出的隧道配置和代理 YAML 视作敏感数据。</p></details>
@@ -95,7 +95,7 @@
       </div>
     </section>
 
-    <section class="final-cta section"><img src="assets/icon.svg" width="64" height="64" alt=""><p class="eyebrow">YOUR NETWORK. YOUR CHOICE.</p><h2>让下一次连接，<br>少一点折腾。</h2><div class="hero-actions"><a class="button primary" href="https://github.com/remixjc/TunnelOne/releases/tag/v0.2.2">下载 Beta <span aria-hidden="true">↓</span></a><a class="button secondary" href="https://github.com/remixjc/TunnelOne">查看源码 <span aria-hidden="true">↗</span></a></div></section>
+    <section class="final-cta section"><img src="assets/icon.svg" width="64" height="64" alt=""><p class="eyebrow">YOUR NETWORK. YOUR CHOICE.</p><h2>让下一次连接，<br>少一点折腾。</h2><div class="hero-actions"><a class="button primary" href="https://github.com/remixjc/TunnelOne/releases/tag/v0.2.3">下载 Beta <span aria-hidden="true">↓</span></a><a class="button secondary" href="https://github.com/remixjc/TunnelOne">查看源码 <span aria-hidden="true">↗</span></a></div></section>
   </main>
   <footer class="footer section"><a class="brand" href="./"><img src="assets/icon.svg" width="28" height="28" alt=""><strong>TunnelOne</strong></a><p>独立开源项目 · 基于 WireGuard 与 Mihomo<br>与 WireGuard LLC、MetaCubeX 无隶属关系。</p><div><a href="https://github.com/remixjc/TunnelOne/blob/main/LICENSE">GPL-3.0</a><a href="https://github.com/remixjc/TunnelOne/issues">反馈问题 ↗</a></div></footer>
 </body>

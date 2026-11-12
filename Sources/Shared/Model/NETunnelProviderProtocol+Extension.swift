@@ -10,6 +10,7 @@ enum PacketTunnelProviderError: String, Error {
     case couldNotDetermineFileDescriptor
     case couldNotSetNetworkSettings
     case couldNotStartProxy
+    case safetyCheckFailed
 }
 
 extension NETunnelProviderProtocol {

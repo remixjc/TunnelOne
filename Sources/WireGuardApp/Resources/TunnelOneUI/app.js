@@ -33,8 +33,9 @@
       detail = report?.result === 'checking' || report?.result === 'rolling-back' ? report.stage : '正在等待系统建立隧道…';
       glyph = 'loader-circle';
     } else if (t.status === 'active') {
-      title = verified ? '隧道与代理已连接' : 'WireGuard 已连接';
-      detail = verified ? '国内直连与国外代理检查均通过。' : t.proxyEnabled ? '隧道已建立；本次安全启动检查尚未通过或未执行。' : '当前按 WireGuard 配置访问网络。';
+      const checking = t.safetyMode && ['checking', 'rolling-back'].includes(report?.result);
+      title = checking ? (report.result === 'rolling-back' ? '正在自动断开' : '正在验证连接') : verified ? '隧道与代理已连接' : 'WireGuard 已连接';
+      detail = checking ? report.stage : verified ? '国内直连与国外代理检查均通过。' : t.proxyEnabled ? '隧道已建立；本次安全启动检查尚未通过或未执行。' : '当前按 WireGuard 配置访问网络。';
       stateClass = verified || !t.proxyEnabled ? 'good' : 'warn'; glyph = verified ? 'shield-check' : 'shield';
     } else if (failed) {
       title = '安全启动未完成'; detail = report.reason || '检查未通过。'; stateClass = 'warn'; glyph = 'shield-alert';
@@ -55,7 +56,7 @@
     if (locked) html += `<p class="to-footnote">请断开隧道并关闭按需连接后更改代理开关。</p>`;
     html += fields([['本地地址', t.address], ['服务器', t.endpoint], ['DNS 服务器', t.dns], ['路由范围', t.allowedIPs]]);
     if (t.status === 'active') html += `<dl class="to-metrics"><div><dt>已接收</dt><dd>${esc(t.rx || '—')}</dd></div><div><dt>已发送</dt><dd>${esc(t.tx || '—')}</dd></div><div><dt>上次握手</dt><dd>${esc(t.handshake || '尚未确认')}</dd></div></dl>`;
-    if (report?.checks?.length && t.status !== 'inactive') html += section('连通性检查', '本次启动时的实际检查结果，不代表持续监控。', report.checks.map(check => `<div class="to-setting-row"><span>${esc(check.name)}</span><span class="to-pill ${check.ok ? 'good' : ''}">${check.ok ? '通过' : '失败'} · HTTP ${esc(check.http || '无响应')}</span></div>`).join(''));
+    if (report?.checks?.length) html += section('连通性检查', '本次启动时的实际检查结果，不代表持续监控。', report.checks.map(check => `<div class="to-setting-row"><span>${esc(check.name)}</span><span class="to-pill ${check.ok ? 'good' : ''}">${check.ok ? '通过' : '失败'} · HTTP ${esc(check.http || '无响应')}</span></div>${!check.ok && check.detail ? `<p class="to-footnote">${esc(check.detail)}${check.exitCode != null ? ` · curl ${esc(check.exitCode)}` : ''}</p>` : ''}`).join(''));
     return html;
   }
   function configuration(t) {
@@ -82,8 +83,8 @@
     return header('代理配置', '使用现有 Clash Party，连接时自动执行安全启动流程。', button('打开 Clash Party', 'open-clash')) +
       section(icon('plug') + '本机代理 · Clash Party', '127.0.0.1:7890 · HTTP / HTTPS / SOCKS', `<ol class="to-step-list">
         <li>确认系统代理开启、TUN 关闭、规则模式、混合端口 7890。</li>
-        <li>读取物理网络上的代理源，然后建立 WireGuard 隧道。</li>
-        <li>确认本次隧道接管 IPv4 主路由，同步临时网络服务代理。</li>
+        <li>读取物理网络上的代理源，等待 Clash 端口就绪，再建立 WireGuard 隧道。</li>
+        <li>等待系统确认已连接并稳定 1 秒，再确认 IPv4 主路由、同步临时网络服务代理。</li>
         <li>检查百度直连和 Google 代理访问，失败自动停止本次隧道。</li>
       </ol><p class="to-footnote">在隧道概览中打开“连接时带入代理”，下次开启时自动执行。</p>`);
   }

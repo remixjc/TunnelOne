@@ -79,6 +79,8 @@ extension PacketTunnelProviderError: WireGuardAppError {
             return (tr("alertTunnelActivationFailureTitle"), tr("alertTunnelActivationSetNetworkSettingsMessage"))
         case .couldNotStartProxy:
             return ("代理未能启动", "隧道已回滚。请检查代理 YAML、端口占用、签名和共享容器权限。详情见连接日志。")
+        case .safetyCheckFailed:
+            return ("安全启动未完成", "请在连接日志中查看 Clash 前置检查、系统连接状态、路由及联网检查的具体失败原因。")
         }
     }
 }
