@@ -28,7 +28,7 @@ const { chromium } = require('playwright');
       publicKey: 'UI_TEST_PUBLIC_KEY', mtu: '1420', peers: [],
       onDemandEnabled: false, onDemandDescription: '未配置',
     };
-    const data = { tunnels: [tunnel], logs: [], message: '', version: '0.2.4', saving: false };
+    const data = { tunnels: [tunnel], logs: [], message: '', version: '0.2.5', saving: false };
     const update = () => page.evaluate(value => window.TunnelOne.update(value), data);
     await update();
     assert.equal(await page.locator('.to-sidebar').evaluate(el => el.getBoundingClientRect().width), 208);

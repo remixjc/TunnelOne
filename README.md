@@ -20,7 +20,7 @@ TunnelOne 是面向 macOS 的 WireGuard 客户端。在 WireGuard 官方 Apple �
 
 **v0.2.1 更新：** 主窗口采用原型的侧栏、概览 / 隧道配置 / 按需连接标签页和代理开关布局；通过原生桥接操作真实的隧道管理器。默认代理来源改为本机 Clash Party 的 `127.0.0.1:7890`，不要求另行导入代理 YAML。真实联网验收状态及与 command 的对应关系见 [command 流程对照](docs/design/command-parity.md)。v0.2.0 的历史验收记录不能作为本次新安全启动流程的联网验收证明。
 
-**当前版本：v0.2.4 · Signed Beta。** 保留安全启动 command 的时序，修正扩展内国内直连的探测路径：使用 WireGuard 当前隧道内的 DNS/TLS/HTTP 连接；国外代理仍经 Clash，保留具体错误详情。保留 WebKit 空白窗口修复。使用 Developer ID 直接分发的系统扩展架构，提供签名、Apple 公证、staple、DMG 和 ZIP 自动发布流程。签名包使用 `-signed` 文件名；未签名包使用 `-preview` 文件名。实际公证和构建结果以对应 Release / Actions 为准。v0.2.0 曾在本机验证安装、系统扩展激活、WireGuard 实际握手及 Clash Party 代理访问；v0.2.1 起的新安全启动流程的真实联网与回滚，以及内置代理、多用户、更新和卸载等验收仍需继续，当前按 Beta 发布。
+**当前版本：v0.2.5 · Signed Beta。** macOS 15+ 的国内检查使用 Network.framework 绑定本次 WireGuard 接口并显式绕过系统代理；国外检查继续走 Clash。macOS 13/14 保留兼容探测路径，真实联网仍待验收。保留 WebKit 空白窗口修复。使用 Developer ID 直接分发的系统扩展架构，提供签名、Apple 公证、staple、DMG 和 ZIP 自动发布流程。签名包使用 `-signed` 文件名；未签名包使用 `-preview` 文件名。实际公证和构建结果以对应 Release / Actions 为准。v0.2.0 曾在本机验证安装、系统扩展激活、WireGuard 实际握手及 Clash Party 代理访问；v0.2.1 起的新安全启动流程的真实联网与回滚，以及内置代理、多用户、更新和卸载等验收仍需继续，当前按 Beta 发布。
 
 English: A native macOS WireGuard client with per-tunnel proxy preferences and a bundled Mihomo process. Uses a macOS System Extension with authenticated XPC configuration handoff and a per-user proxy process. Signed distributions require Developer ID profiles and successful Apple notarization; unsigned previews remain available for development. The current release is a beta pending device acceptance.
 
@@ -32,7 +32,7 @@ TunnelOne 把代理偏好保存在各自的 VPN 配置中，由 Network Extensio
 
 ## 功能与实现范围
 
-| 功能 | v0.2.4 实现 |
+| 功能 | v0.2.5 实现 |
 | --- | --- |
 | WireGuard 隧道管理 | 基于官方 macOS 客户端：新建、导入 `.conf` / ZIP、编辑、启停、删除、导出 |
 | 多对端与运行信息 | 公钥、地址、DNS、MTU、AllowedIPs、Endpoint、保活、握手与收发统计 |
@@ -154,8 +154,8 @@ bash scripts/build.sh --signed
 发布新版本（签名凭据齐全时自动公证）：
 
 ```bash
-git tag v0.2.4
-git push origin v0.2.4
+git tag v0.2.5
+git push origin v0.2.5
 ```
 
 后续版本先更新 `VERSION` 与 `project.yml`，添加 `docs/releases/<版本>.md`，再推送对应 tag。工作流拒绝版本不一致的发布，且不会把未签名预览标成正式版。签名版本默认仍为 Beta；完成真实设备验收后才将仓库变量 `RELEASE_CHANNEL` 改为 `stable`。

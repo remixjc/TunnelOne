@@ -1,9 +1,28 @@
 import XCTest
+import Network
 import NetworkExtension
 import TunnelOnePolicy
 @testable import TunnelOneConnectivity
 
 final class TunnelConnectivityProbeTests: XCTestCase {
+    func testDirectTLSRequiresSelectedInterfaceAndBypassesSystemProxy() throws {
+        let monitor = NWPathMonitor()
+        let ready = expectation(description: "Interface snapshot")
+        var interface: Network.NWInterface?
+        monitor.pathUpdateHandler = { path in
+            interface = path.availableInterfaces.first
+            ready.fulfill()
+        }
+        monitor.start(queue: DispatchQueue(label: "ProbeTests.Interfaces"))
+        defer { monitor.cancel() }
+        wait(for: [ready], timeout: 2)
+        let selected = try XCTUnwrap(interface)
+        let parameters = TunnelConnectivityProbe.directParameters(interface: selected)
+        XCTAssertEqual(parameters.requiredInterface, selected)
+        XCTAssertTrue(parameters.preferNoProxies)
+        XCTAssertTrue(parameters.defaultProtocolStack.applicationProtocols.contains { $0 is NWProtocolTLS.Options })
+    }
+
     final class Connection: ProbeTCPConnection {
         var state: NWTCPConnectionState = .connected
         var error: Error?

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 import Foundation
+import Network
 import NetworkExtension
 #if SWIFT_PACKAGE
 import TunnelOnePolicy
@@ -16,16 +17,78 @@ protocol ProbeTCPConnection {
 
 extension NWTCPConnection: ProbeTCPConnection {}
 
-/// An ordinary provider socket (including a child curl) does not prove that
-/// clients can use the VPN. Explicitly use the provider's through-tunnel API.
-/// This compatibility API also supports our macOS 13 minimum deployment target.
+/// Require this provider's interface and explicitly bypass system proxies.
 enum TunnelConnectivityProbe {
     static func run(provider: NEPacketTunnelProvider, isCancelled: @escaping () -> Bool) -> SafetyProbe {
+        if #available(macOS 15, *) {
+            guard let interface = provider.virtualInterface else {
+                return SafetyProbe(name: "国内直连", ok: false, http: "000",
+                                   detail: "本次 WireGuard 接口尚未就绪。",
+                                   transport: "WireGuard 隧道内 HTTPS")
+            }
+            return Operation(connection: DirectTLSConnection(interface: interface),
+                             isCancelled: isCancelled).run()
+        }
+        // macOS 13/14 do not expose virtualInterface. Keep their compatibility
+        // path; any proxy/path conflict remains a failed check, never success.
         let connection = provider.createTCPConnectionThroughTunnel(
             to: NWHostEndpoint(hostname: "www.baidu.com", port: "443"),
             enableTLS: true, tlsParameters: nil, delegate: nil)
         let operation = Operation(connection: connection, isCancelled: isCancelled)
         return operation.run()
+    }
+
+    static func directParameters(interface: Network.NWInterface) -> NWParameters {
+        let parameters = NWParameters.tls
+        parameters.requiredInterface = interface
+        parameters.preferNoProxies = true
+        return parameters
+    }
+
+    final class DirectTLSConnection: ProbeTCPConnection {
+        private let connection: NWConnection
+        private let lock = NSLock()
+        private var currentState: NWTCPConnectionState = .connecting
+        private var currentError: Error?
+
+        var state: NWTCPConnectionState { lock.lock(); defer { lock.unlock() }; return currentState }
+        var error: Error? { lock.lock(); defer { lock.unlock() }; return currentError }
+
+        init(interface: Network.NWInterface) {
+            connection = NWConnection(host: "www.baidu.com", port: 443,
+                                      using: TunnelConnectivityProbe.directParameters(interface: interface))
+            connection.stateUpdateHandler = { [weak self] state in
+                guard let self = self else { return }
+                self.lock.lock()
+                defer { self.lock.unlock() }
+                switch state {
+                case .ready: self.currentState = .connected
+                case .failed(let error):
+                    self.currentState = .disconnected
+                    self.currentError = error
+                case .cancelled: self.currentState = .cancelled
+                case .waiting(let error):
+                    self.currentState = .waiting
+                    self.currentError = error
+                case .setup, .preparing: self.currentState = .connecting
+                @unknown default: self.currentState = .invalid
+                }
+            }
+            connection.start(queue: DispatchQueue(label: "TunnelOne.DirectTLS"))
+        }
+
+        func write(_ data: Data, completionHandler: @escaping (Error?) -> Void) {
+            connection.send(content: data, completion: .contentProcessed { completionHandler($0) })
+        }
+
+        func readMinimumLength(_ minimum: Int, maximumLength maximum: Int,
+                               completionHandler: @escaping (Data?, Error?) -> Void) {
+            connection.receive(minimumIncompleteLength: minimum, maximumLength: maximum) { data, _, _, error in
+                completionHandler(data, error)
+            }
+        }
+
+        func cancel() { connection.cancel() }
     }
 
     final class Operation {

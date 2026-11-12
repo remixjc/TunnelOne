@@ -1,4 +1,4 @@
-# v0.2.4 原型与安全启动 command 的实现对照
+# v0.2.5 原型与安全启动 command 的实现对照
 
 本次修订以用户指出的两个问题为范围：主窗口未按原型实现；开启后缺少 `local/legacy-tools/WireGuard与Clash安全启动.command` 中的实际操作。该 command 保持原样，作为行为对照。
 
@@ -26,7 +26,7 @@
 | 确认临时主服务属于目标 WireGuard | 主接口必须等于本次 utun，服务 ID 不能等于原物理网络 |
 | 同步隧道代理 | 用系统配置 API 写本次 `State:/Network/Service/<ID>/Proxies`；不写 Setup 或永久网络偏好 |
 | 重新核验生效代理 | 最多检查 12 次，每次间隔 250ms；仍未生效则回滚 |
-| 两项并行联网检查 | 百度通过 provider 的 through-tunnel TCP/TLS API，在本次隧道内解析并请求 HTTPS；Google 仍通过 curl 显式使用 127.0.0.1:7890；HTTP 200–399 才通过 |
+| 两项并行联网检查 | macOS 15+ 百度通过 Network.framework 绑定 provider.virtualInterface，设置 preferNoProxies 后请求 HTTPS；macOS 13/14 保留兼容 API；Google 仍通过 curl 显式使用 127.0.0.1:7890；HTTP 200–399 才通过 |
 | 保存具体错误 | 原生直连保存网络错误域 / 代码、超时或 HTTP 状态；Google 代理保存 HTTP、curl 退出码和 stderr；弹窗及日志读取对应启动尝试的真实结果 |
 | 检查失败自动断开 | provider 停止本次 WireGuardAdapter；记录实际回滚完成或失败，保留原有 Clash |
 | JSON 报告 | 根目录按 UID 隔离的配置旁保存 0600 报告，经认证 XPC 提供给主窗口 |
@@ -60,3 +60,9 @@ v0.2.4 修正探测所处的网络上下文：provider 不能把自身启动的�
 本机没有 `TunnelOne-notarization` 钥匙串凭据，也没有公证环境变量，不能在本机完成新的 Apple 公证。可安装版本仍需经过仓库已有 `build.yml` 的 `require_signed` 路径，完成公证和 staple 后再安装验证。启动外部代理连接前已增加对当前 build 的版本化 XPC 安全报告 API 的探测，不能在新扩展缺失时退回旧的端口检查流程。
 
 验证失败后已从 `local/backups/TunnelOne-0.2.0-build3-before-command-alignment.app` 恢复原安装，系统扩展仍为 build 3，两条 VPN 均保持断开。本次没有发起真实连接，也未修改系统安全设置；修正版 build 4 保留在 `build/DerivedData/Build/Products/Release/TunnelOne.app`。
+
+## v0.2.5 代理绕过修订
+
+v0.2.4 build 8 已在本机安装并激活；17:10 的实际检查中，Google 代理返回 204，国内检查超时并自动回滚。系统日志确认 through-tunnel 兼容 API 采用了 127.0.0.1:7890，随后因回环接口不能满足 utun8 的绑定要求而失败。此前发布说明声称该 API 绕过代理并不准确，现已更正。
+
+macOS 15+ 改用 NWConnection / NWParameters.tls，将 requiredInterface 设为本次 provider.virtualInterface，并设置 preferNoProxies = true。保留域名解析和系统默认证书验证。macOS 13/14 未提供 virtualInterface，保留原兼容 API；存在代理冲突时仍判定失败并回滚，不宣称其已通过实机验收。
