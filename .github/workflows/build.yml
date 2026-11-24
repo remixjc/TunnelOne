@@ -152,11 +152,15 @@ jobs:
         with:
           name: TunnelOne-universal
           path: dist
+          github-token: ${{ github.token }}
+          run-id: ${{ github.run_id }}
       - uses: actions/download-artifact@v4
         with:
           pattern: TunnelOne-windows-*
           merge-multiple: true
           path: dist
+          github-token: ${{ github.token }}
+          run-id: ${{ github.run_id }}
       - name: Publish verified distribution
         env:
           GH_TOKEN: ${{ github.token }}
