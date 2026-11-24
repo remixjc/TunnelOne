@@ -35,18 +35,43 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: website
-      - name: Wait for Pages artifact visibility
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          for attempt in $(seq 1 12); do
-            if gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts" --jq '.artifacts[].name' | grep -qx github-pages; then
-              exit 0
-            fi
-            sleep 5
-          done
-          echo "Pages artifact is not visible through the Actions API."
-          exit 1
       - name: Deploy
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/github-script@v8
+        with:
+          script: |
+            // Use the run-scoped REST API: artifact-client discovery can return
+            // an empty job-scoped list immediately after a successful upload.
+            const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
+            let artifact;
+            for (let attempt = 0; attempt < 12; attempt++) {
+              const { data } = await github.rest.actions.listWorkflowRunArtifacts({
+                ...context.repo, run_id: context.runId, per_page: 100
+              });
+              artifact = data.artifacts.find(item => item.name === 'github-pages' && !item.expired);
+              if (artifact) break;
+              await pause(5000);
+            }
+            if (!artifact) throw new Error('The uploaded Pages artifact is not visible.');
+            const idToken = await core.getIDToken();
+            core.setSecret(idToken);
+            const { data: deployment } = await github.request('POST /repos/{owner}/{repo}/pages/deployments', {
+              ...context.repo, artifact_id: artifact.id, pages_build_version: context.sha, oidc_token: idToken
+            });
+            const deploymentId = deployment.id || deployment.status_url.split('/').pop();
+            for (let attempt = 0; attempt < 60; attempt++) {
+              const { data } = await github.request('GET /repos/{owner}/{repo}/pages/deployments/{deployment_id}', {
+                ...context.repo, deployment_id: deploymentId
+              });
+              if (data.status === 'succeed') {
+                core.setOutput('page_url', deployment.page_url);
+                core.info('Pages deployment succeeded: ' + deployment.page_url);
+                return;
+              }
+              if (/failed|cancelled|lost/.test(data.status)) throw new Error('Pages deployment: ' + data.status);
+              await pause(5000);
+            }
+            await github.request('POST /repos/{owner}/{repo}/pages/deployments/{deployment_id}/cancel', {
+              ...context.repo, deployment_id: deploymentId
+            });
+            throw new Error('Pages deployment timed out.');
