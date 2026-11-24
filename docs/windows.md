@@ -18,6 +18,7 @@ Windows 版不修改用户全局代理、WinHTTP 代理或其他 WireGuard 客�
 - 读取当前用户的 Internet Options / Windows 系统代理，交给 .NET 的 Windows 系统代理解析器处理手动代理、PAC 与绕过规则。新建代理实例以读取最新设置，不使用进程 `HTTP_PROXY` 等环境变量作为替代来源。
 - 有系统代理时，连接前后通过系统规则请求 `https://www.google.com/generate_204` 并要求 HTTP 204；无代理时只建立 WireGuard，不要求公共互联网可达。PAC / 绕过规则可以选择直连，因此界面明确说明检查的是系统规则，而非保证经过代理节点。
 - 每 4 秒检查代理设置是否变化；变化后重新验证。代理检查失败会移除本次 TunnelOne 服务，清理失败时保留连接所有权并允许重试断开。用户的代理设置保持当前值。
+- Windows 默认可能仅勾选自动发现（WPAD），这不代表已有可用代理。未显式配置手动代理或 PAC 时，显示 WPAD 未验证并仅连接 WireGuard，不因公共检查目标不可达而阻止内网隧道。
 - 关闭偏好只跳过检查，Windows 已有系统代理仍可能影响遵循它的应用。HTTP、HTTPS 和 PAC 的实际兼容性取决于 Windows / .NET 的系统解析结果；仅 SOCKS、WPAD、认证代理、其他 VPN/TUN 组合尚未完成兼容验收。不会执行 WireGuard 的 PreUp/PostUp/PreDown/PostDown 或其他脚本。
 - 不保证 UDP、游戏或忽略系统代理的应用经过代理，也不保证代理节点出站一定经 WireGuard。默认路由 `/0` 可能触发官方 Windows WireGuard 的限制性防火墙；请按实际路由、DNS 和代理客户端配置验收，TunnelOne 不自动弱化该防火墙。
 
@@ -48,7 +49,7 @@ dotnet Windows/TunnelOne.Windows/bin/Release/net10.0-windows/TunnelOne.dll --smo
 
 依赖固定在 `scripts/windows-dependencies.lock.json`，下载时同时检查 SHA-256 与 WireGuard LLC Authenticode 签名。Windows 发布仅随包提供未修改的官方 MSI，不编译或签发自有内核驱动。上游源码见 [WireGuard for Windows v1.1.1](https://git.zx2c4.com/wireguard-windows/tag/?h=v1.1.1)，许可随包提供。
 
-`build.yml` 在 main / PR / `v*` tag 调用 `windows.yml`。两个架构均运行配置、加密、生命周期测试和 x64 runner 上的真实隔离服务测试，编译并渲染原生窗口，随后交叉发布对应架构的自包含 ZIP、安装 EXE 和校验文件。ARM64 产物已交叉编译；ARM64 实机、真实远端握手、代理客户端组合、休眠与网络切换仍需验收。
+`build.yml` 在 main / PR / `v*` tag 调用 `windows.yml`。两个架构均运行配置、加密、生命周期测试和 x64 runner 上的真实隔离服务测试，编译并渲染原生窗口，随后交叉发布对应架构的自包含 ZIP、安装 EXE 和校验文件。检查最终 EXE 的 PE 架构，并对 x64 安装包执行静默安装、运行自包含应用渲染窗口及卸载。ARM64 产物已交叉编译；ARM64 实机、真实远端握手、代理客户端组合、休眠与网络切换仍需验收。
 
 Tag 发布统一等待 macOS 与两个 Windows 构建通过，合并到同一个 GitHub Release。可手动运行 Windows 工作流，仅生成 artifact。
 

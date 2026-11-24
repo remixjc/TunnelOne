@@ -14,6 +14,14 @@ New-Item -ItemType Directory -Force $publish, $dist | Out-Null
 # Single-file, self-contained distribution; users do not need to install .NET.
 dotnet publish (Join-Path $root 'Windows/TunnelOne.Windows') -c Release -r "win-$Architecture" --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -p:DebugSymbols=false -o $publish
 if ($LASTEXITCODE -ne 0) { throw 'Windows publish failed.' }
+$binary = [IO.BinaryReader]::new([IO.File]::OpenRead((Join-Path $publish 'TunnelOne.exe')))
+try {
+    $binary.BaseStream.Position = 0x3c
+    $peOffset = $binary.ReadUInt32()
+    $binary.BaseStream.Position = $peOffset + 4
+    $expectedMachine = if ($Architecture -eq 'arm64') { 0xaa64 } else { 0x8664 }
+    if ($binary.ReadUInt16() -ne $expectedMachine) { throw 'Published executable has the wrong processor architecture.' }
+} finally { $binary.Dispose() }
 $dependencyDir = Join-Path $publish 'Dependencies'
 New-Item -ItemType Directory -Force $dependencyDir | Out-Null
 Copy-Item -LiteralPath $msi -Destination (Join-Path $dependencyDir 'wireguard.msi')

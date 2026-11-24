@@ -8,5 +8,6 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../TunnelOne.Core/TunnelOne.Core.csproj" />
+    <EmbeddedResource Include="app.ico" LogicalName="TunnelOne.Icon" />
   </ItemGroup>
 </Project>

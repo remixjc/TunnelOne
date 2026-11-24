@@ -78,7 +78,7 @@
       <div class="section-heading"><div><p class="eyebrow">LESS SWITCHING. MORE FLOW.</p><h2>把复杂留给连接，<br>把简单留给你。</h2></div><p>保留熟悉的 WireGuard 工作方式，<br>再让代理自然地成为连接的一部分。</p></div>
       <div class="feature-grid">
         <article class="feature-card feature-wide"><div class="feature-number">01 / WIREGUARD</div><div class="feature-icon" aria-hidden="true">⌁</div><h3>熟悉的隧道，两种桌面。</h3><p>导入 .conf 或 ZIP、管理多个对端、查看握手和流量。macOS 支持菜单栏与按需连接；Windows 提供系统托盘、DPAPI 加密和异常退出后的连接清理。</p><div class="feature-tags"><span>配置编辑</span><span>多对端</span><span>加密存储</span><span>日志诊断</span></div></article>
-        <article class="feature-card"><div class="feature-number">02 / PROXY</div><div class="feature-icon" aria-hidden="true">⇄</div><h3>一个开关，决定同行。</h3><p>自动读取 HTTP、HTTPS、SOCKS、PAC 和绕过规则，不限定客户端或端口。没有系统代理时仅连接 WireGuard。</p><div class="small-toggle" aria-hidden="true"><span>WireGuard + 系统代理</span><i></i></div></article>
+        <article class="feature-card"><div class="feature-number">02 / PROXY</div><div class="feature-icon" aria-hidden="true">⇄</div><h3>一个开关，决定同行。</h3><p>macOS 同步 HTTP、HTTPS、SOCKS、PAC 与绕过规则；Windows 沿用当前用户系统规则并检查访问。不限定客户端或端口，无代理时仅连接 WireGuard。</p><div class="small-toggle" aria-hidden="true"><span>WireGuard + 系统代理</span><i></i></div></article>
         <article class="feature-card"><div class="feature-number">03 / LIFECYCLE</div><div class="feature-icon" aria-hidden="true">↻</div><h3>连接开始，也负责收尾。</h3><p>连接前后验证实际访问，连接期间跟随来源代理变化。验证失败回滚本次隧道，保留用户的系统代理。</p></article>
         <article class="feature-card feature-wide architecture-card"><div class="feature-number">04 / ONE CLEAR PATH</div><h3>流量的去向，一目了然。</h3><div class="architecture-flow"><div><span>01</span><strong>应用请求</strong><small>遵循系统代理规则</small></div><b aria-hidden="true">→</b><div><span>02</span><strong>现有代理规则</strong><small>选择直连或代理节点</small></div><b aria-hidden="true">→</b><div><span>03</span><strong>WireGuard</strong><small>路由范围由 AllowedIPs 决定</small></div></div><p class="architecture-caption">WireGuard 与系统代理共同生效；代理客户端的节点出站仍受其接口绑定和路由规则影响。</p></article>
       </div>
@@ -98,7 +98,7 @@
       <div class="faq-list">
         <details><summary>现在可以直接安装后日常使用吗？<span>+</span></summary><p>v0.4.0 提供 macOS Signed Beta 和 Windows Preview。macOS 请选择 signed 安装包并允许网络扩展。Windows 提供 x64 / ARM64 安装 EXE 与自包含便携 ZIP，默认未签名；官方 WireGuard MSI 单独签名。Windows 真实远端 VPN、代理组合、ARM64 实机与休眠恢复尚未验收，当前测试范围见仓库文档。</p></details>
         <details><summary>可以使用其他代理客户端吗？<span>+</span></summary><p>可以使用提供标准系统代理的客户端。代理服务需要已运行，TunnelOne 不启动指定软件。Windows 沿用当前用户系统规则，连接前后验证 HTTPS，并检查设置变化；PAC 和绕过规则可能选择直连。仅 SOCKS、TUN、WPAD 或额外认证代理的兼容性需单独验证。</p></details>
-        <details><summary>“带入代理”会代理所有应用吗？<span>+</span></summary><p>它通过隧道的 HTTP、HTTPS、SOCKS 或 PAC 系统代理设置工作，影响遵循系统代理的应用。忽略系统代理的程序、UDP 和游戏流量不在这一开关的保证范围内；WireGuard 路由仍由 AllowedIPs 决定。</p></details>
+        <details><summary>“带入代理”会代理所有应用吗？<span>+</span></summary><p>只影响遵循系统代理的应用。macOS 将代理设置同步到本次隧道；Windows 保留用户现有系统代理。忽略系统代理的程序、UDP 和游戏流量不在这一开关的保证范围内；WireGuard 路由仍由 AllowedIPs 决定。</p></details>
         <details><summary>我的私钥和节点配置在哪里？<span>+</span></summary><p>macOS 私钥由系统钥匙串存储，历史代理 YAML 位于本机 App Group 容器。Windows 用户配置使用 DPAPI 加密，服务配置另以机器 DPAPI 与管理员 / SYSTEM 权限保护，断开时清理。项目没有账户或遥测服务；导出的标准 .conf 包含明文私钥。</p></details>
         <details><summary>已经发布的原型等同于客户端吗？<span>+</span></summary><p>原型用于体验 macOS 设计方向，全部连接与数据都是模拟。实际 macOS 客户端采用 AppKit 与本地 WebKit；Windows 使用原生 .NET 桌面窗口。各平台实现范围和验收清单以仓库文档为准。</p></details>
       </div>

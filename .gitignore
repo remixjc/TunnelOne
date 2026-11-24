@@ -21,5 +21,4 @@ __pycache__/
 test-results/
 Windows/**/bin/
 Windows/**/obj/
-Windows/**/app.ico
 *.pfx

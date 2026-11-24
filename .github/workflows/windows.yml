@@ -51,6 +51,22 @@ jobs:
           WINDOWS_CSC_LINK: ${{ secrets.WINDOWS_CSC_LINK }}
           WINDOWS_CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CSC_KEY_PASSWORD }}
         run: ./scripts/build-windows.ps1 -Architecture ${{ matrix.arch }}
+      - name: Install, render and uninstall the packaged x64 application
+        if: matrix.arch == 'x64'
+        shell: pwsh
+        run: |
+          $version = (Get-Content VERSION -Raw).Trim()
+          $target = Join-Path $env:RUNNER_TEMP 'TunnelOne-install-test'
+          $installer = Resolve-Path "dist/TunnelOne-$version-windows-x64-setup.exe"
+          $install = Start-Process -FilePath $installer -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', ('/DIR="' + $target + '"')) -PassThru -Wait -WindowStyle Hidden
+          if ($install.ExitCode -ne 0) { throw "Installer failed: $($install.ExitCode)" }
+          try {
+            $app = Start-Process -FilePath (Join-Path $target 'TunnelOne.exe') -ArgumentList '--smoke-test' -PassThru -Wait -WindowStyle Hidden
+            if ($app.ExitCode -ne 0 -or -not (Test-Path (Join-Path $target 'smoke-test.png'))) { throw 'Packaged application rendering failed.' }
+          } finally {
+            $uninstall = Start-Process -FilePath (Join-Path $target 'unins000.exe') -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART') -PassThru -Wait -WindowStyle Hidden
+            if ($uninstall.ExitCode -ne 0) { throw "Uninstaller failed: $($uninstall.ExitCode)" }
+          }
       - uses: actions/upload-artifact@v4
         with:
           name: TunnelOne-windows-${{ matrix.arch }}

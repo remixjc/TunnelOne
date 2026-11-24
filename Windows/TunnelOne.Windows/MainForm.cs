@@ -34,7 +34,9 @@ public sealed class MainForm : Form
         MinimumSize = new Size(960, 680);
         Size = new Size(1100, 780);
         StartPosition = FormStartPosition.CenterScreen;
-        Icon = SystemIcons.Shield;
+        using var iconStream = Assembly.GetExecutingAssembly().GetManifestResourceStream("TunnelOne.Icon")!;
+        Icon = new Icon(iconStream);
+        tray.Icon = Icon;
         var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Padding = new Padding(20) };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 235));
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));

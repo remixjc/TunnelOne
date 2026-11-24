@@ -35,6 +35,18 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: website
+      - name: Wait for Pages artifact visibility
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for attempt in $(seq 1 12); do
+            if gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts" --jq '.artifacts[].name' | grep -qx github-pages; then
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Pages artifact is not visible through the Actions API."
+          exit 1
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4

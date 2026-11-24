@@ -20,10 +20,17 @@ public sealed class SystemProxyGuard : IProxyGuard
         using var key = Registry.CurrentUser.OpenSubKey(Settings);
         using var connections = key?.OpenSubKey("Connections");
         var blob = connections?.GetValue("DefaultConnectionSettings") as byte[];
-        bool automatic = !string.IsNullOrWhiteSpace(key?.GetValue("AutoConfigURL") as string) ||
+        bool pac = !string.IsNullOrWhiteSpace(key?.GetValue("AutoConfigURL") as string);
+        bool automatic = pac ||
             Convert.ToInt32(key?.GetValue("AutoDetect") ?? 0) != 0 || blob is { Length: > 8 } && (blob[8] & 12) != 0;
         bool manual = Convert.ToInt32(key?.GetValue("ProxyEnable") ?? 0) != 0;
-        if (!manual && !automatic) return "未启用系统代理，本次仅连接 WireGuard。";
+        // Windows enables WPAD auto-detection by default even on networks with no proxy.
+        // Do not make an intranet-only tunnel depend on public HTTPS in that default state.
+        if (!manual && !pac) return automatic
+            ? "仅启用自动发现（WPAD），本次未验证代理；仅连接 WireGuard。"
+            : "未启用系统代理，本次仅连接 WireGuard。";
+        if (manual && string.IsNullOrWhiteSpace(key?.GetValue("ProxyServer") as string))
+            throw new IOException("系统手动代理已启用，但服务器地址为空。请先修正系统代理。");
         // A fresh system proxy object observes the user's latest PAC/bypass/server settings.
         // Do not change HKCU, WinHTTP or any other application's global proxy settings.
         var systemProxy = WebRequest.GetSystemWebProxy();
