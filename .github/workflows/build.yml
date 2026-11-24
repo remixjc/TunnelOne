@@ -1,4 +1,4 @@
-name: macOS Build & Release
+name: Desktop Build & Release
 on:
   push:
     branches: [main]
@@ -16,6 +16,9 @@ concurrency:
   group: build-${{ github.ref }}
   cancel-in-progress: false
 jobs:
+  windows:
+    uses: ./.github/workflows/windows.yml
+    secrets: inherit
   build:
     runs-on: macos-15
     timeout-minutes: 90
@@ -139,7 +142,7 @@ jobs:
         run: python scripts/cleanup_signing.py
   release:
     if: startsWith(github.ref, 'refs/tags/')
-    needs: build
+    needs: [build, windows]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -148,6 +151,11 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: TunnelOne-universal
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: TunnelOne-windows-*
+          merge-multiple: true
           path: dist
       - name: Publish verified distribution
         env:
@@ -159,7 +167,7 @@ jobs:
           title="TunnelOne $RELEASE_TAG · Developer Preview"
           prerelease=true
           if [[ "$SIGNED" == true ]]; then
-            title="TunnelOne $RELEASE_TAG · Signed Beta"
+            title="TunnelOne $RELEASE_TAG · macOS Signed Beta · Windows Preview"
             if [[ "$RELEASE_CHANNEL" == stable ]]; then
               title="TunnelOne $RELEASE_TAG"
               prerelease=false

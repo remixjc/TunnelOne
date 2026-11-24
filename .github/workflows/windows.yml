@@ -1,0 +1,66 @@
+name: Windows Build
+on:
+  workflow_call:
+    secrets:
+      WINDOWS_CSC_LINK:
+        required: false
+      WINDOWS_CSC_KEY_PASSWORD:
+        required: false
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-2025
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x64, arm64]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Install and verify official WireGuard backend for integration tests
+        shell: pwsh
+        run: ./scripts/prepare-windows.ps1 -Architecture x64 -Install
+      - name: Test Windows configuration, encryption and connection lifecycle
+        shell: pwsh
+        run: |
+          dotnet run --project Windows/TunnelOne.Tests -c Release -- --integration
+          if ($LASTEXITCODE -ne 0) { throw 'Windows tests failed.' }
+      - name: Compile and smoke test native window
+        shell: pwsh
+        run: |
+          dotnet build Windows/TunnelOne.Windows -c Release
+          if ($LASTEXITCODE -ne 0) { throw 'Windows UI build failed.' }
+          dotnet Windows/TunnelOne.Windows/bin/Release/net10.0-windows/TunnelOne.dll --smoke-test
+          if ($LASTEXITCODE -ne 0) { throw 'Windows UI smoke test failed.' }
+          if (-not (Test-Path Windows/TunnelOne.Windows/bin/Release/net10.0-windows/smoke-test.png)) { throw 'UI rendering did not complete.' }
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "${env:ProgramFiles(x86)}/Inno Setup 6/ISCC.exe")) {
+            choco install innosetup --no-progress -y
+            if ($LASTEXITCODE -ne 0) { throw 'Inno Setup installation failed.' }
+          }
+      - name: Build self-contained portable ZIP and installer
+        shell: pwsh
+        env:
+          WINDOWS_CSC_LINK: ${{ secrets.WINDOWS_CSC_LINK }}
+          WINDOWS_CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CSC_KEY_PASSWORD }}
+        run: ./scripts/build-windows.ps1 -Architecture ${{ matrix.arch }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TunnelOne-windows-${{ matrix.arch }}
+          path: |
+            dist/*windows-${{ matrix.arch }}*
+            dist/SHA256SUMS-Windows-${{ matrix.arch }}.txt
+          if-no-files-found: error
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Windows-UI-${{ matrix.arch }}
+          path: Windows/TunnelOne.Windows/bin/Release/net10.0-windows/smoke-test.png

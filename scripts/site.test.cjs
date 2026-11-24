@@ -36,6 +36,12 @@ const { chromium } = require("playwright");
     });
     await page.goto(base);
     await page.locator("h1").waitFor();
+    assert.equal(await page.locator('#downloads [data-download]').count(), 3);
+    for (const arch of ['x64', 'arm64']) {
+      assert.match(await page.locator(`[data-download="windows-${arch}"]`).getAttribute('href'),
+        new RegExp(`/releases/download/v0\\.4\\.0/TunnelOne-0\\.4\\.0-windows-${arch}-setup\\.exe$`));
+    }
+    assert.match(await page.locator('#downloads').innerText(), /默认未签名/);
     await page.screenshot({ path: path.join(output, "desktop.png"), fullPage: true });
     await page.locator("#connect-button").click();
     await page.locator("#demo-title").filter({ hasText: "隧道与代理已就绪" }).waitFor();

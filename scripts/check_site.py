@@ -24,7 +24,7 @@ class Page(HTMLParser):
 count = 0
 for path in ROOT.glob("*.html"):
     page = Page()
-    page.feed(path.read_text())
+    page.feed(path.read_text(encoding="utf-8"))
     for link in page.links:
         parts = urlsplit(link)
         if parts.scheme or parts.netloc or parts.path.startswith("/"):

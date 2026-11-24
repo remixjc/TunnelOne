@@ -1,0 +1,14 @@
+{
+  "wireguard": {
+    "version": "1.1.1",
+    "source": "https://git.zx2c4.com/wireguard-windows/tag/?h=v1.1.1",
+    "x64": {
+      "url": "https://download.wireguard.com/windows-client/wireguard-amd64-1.1.1.msi",
+      "sha256": "7bfed60ad61b785c914b38b61555a975488e1d3ec472dbfb2fcdf498fca75242"
+    },
+    "arm64": {
+      "url": "https://download.wireguard.com/windows-client/wireguard-arm64-1.1.1.msi",
+      "sha256": "8336335c738d4aff040fa9d11b752da65a80b6f41d3262d6ba5e82f97ebd1bd4"
+    }
+  }
+}

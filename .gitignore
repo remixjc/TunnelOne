@@ -19,3 +19,7 @@ node_modules/
 __pycache__/
 *.py[cod]
 test-results/
+Windows/**/bin/
+Windows/**/obj/
+Windows/**/app.ico
+*.pfx

@@ -7,22 +7,41 @@
   <a href="https://remixjc.github.io/TunnelOne/">项目官网</a> ·
   <a href="https://remixjc.github.io/TunnelOne/prototype.html">交互原型</a> ·
   <a href="https://github.com/remixjc/TunnelOne/releases">下载 Beta</a> ·
-  <a href="docs/signing.md">签名与发布</a>
+  <a href="docs/windows.md">Windows 指南</a> ·
+  <a href="docs/signing.md">macOS 签名与发布</a>
 </p>
 <p align="center">
   <a href="https://github.com/remixjc/TunnelOne/actions/workflows/build.yml"><img src="https://github.com/remixjc/TunnelOne/actions/workflows/build.yml/badge.svg" alt="macOS build"></a>
   <a href="https://github.com/remixjc/TunnelOne/actions/workflows/pages.yml"><img src="https://github.com/remixjc/TunnelOne/actions/workflows/pages.yml/badge.svg" alt="Pages"></a>
   <img src="https://img.shields.io/badge/macOS-13%2B-153c36" alt="macOS 13 or newer">
+  <img src="https://img.shields.io/badge/Windows-10%20%2F%2011-465fff" alt="Windows 10 and 11">
   <img src="https://img.shields.io/badge/license-GPL--3.0-b7f7c1" alt="GPL-3.0">
 </p>
 
-TunnelOne 是面向 macOS 的 WireGuard 客户端，为每个隧道提供「连接时沿用系统代理」设置。用户在任意代理客户端开启系统代理后，TunnelOne 自动读取当前配置，将其带入 WireGuard。连接时不启动代理客户端，不读取客户端私有配置，也不要求固定端口。
+TunnelOne 是面向 **macOS 和 Windows** 的 WireGuard 客户端，为每个隧道提供「连接时沿用系统代理」设置。用户在任意代理客户端开启系统代理后，TunnelOne 沿用当前规则。连接时不启动代理客户端，不读取客户端私有配置，也不要求固定端口。
 
-**当前版本：v0.3.0 · Signed Beta（build 10）。** 支持独立的 HTTP / HTTPS / SOCKS 地址和端口、PAC 与绕过规则。没有系统代理时仅连接 WireGuard；已配置但无法访问时明确报错。连接期间监听来源网络服务的代理变化并更新本次隧道。新导入隧道默认启用自动沿用；保留已有隧道的开关设置和历史内置配置。实现与边界见[系统代理继承方案](docs/design/system-proxy-inheritance.md)，实际验收见[验收记录](docs/acceptance.md)。
+**当前版本：v0.4.0（macOS build 11）。** macOS 继续按 Signed Beta 发布；新增 Windows Preview，支持 Windows 10 2004+ / Windows 11 的 x64 与 ARM64 原生应用、安装 EXE 与便携 ZIP。Windows 安装包带官方 WireGuard MSI 和 .NET 运行时；未配置 Windows 签名证书时，TunnelOne EXE 未签名。详见 [Windows 使用、构建与边界](docs/windows.md)。
+
+macOS 支持独立的 HTTP / HTTPS / SOCKS 地址和端口、PAC 与绕过规则。没有系统代理时仅连接 WireGuard；已配置但无法访问时明确报错。连接期间监听来源网络服务的代理变化并更新本次隧道。新导入隧道默认启用自动沿用；保留已有隧道的开关设置和历史内置配置。实现与边界见[系统代理继承方案](docs/design/system-proxy-inheritance.md)，实际验收见[验收记录](docs/acceptance.md)。
 
 发布流水线提供 Apple Silicon / Intel 通用应用、Developer ID 签名、Apple 公证、staple、DMG 和 ZIP。请选择 Release 中的 `-signed` 安装包；`-preview` 仅供开发。当前仍按 Beta 发布。
 
-English: A macOS WireGuard client that inherits the user's existing system proxy, independently of proxy client brand or port. Supports HTTP, HTTPS, SOCKS, PAC and bypass rules, with verification and updates scoped to the active tunnel. System Extension deployment uses Developer ID signing and Apple notarization.
+English: A macOS and Windows WireGuard client that uses the user's existing system proxy. macOS uses a signed, notarized System Extension; Windows Preview uses the official WireGuard service, DPAPI storage and system proxy verification. Windows x64 / ARM64 installers and self-contained portable ZIPs are built by GitHub Actions. See [Windows documentation](docs/windows.md) for platform differences and validation limits.
+
+## 平台支持
+
+| | macOS | Windows Preview |
+| --- | --- | --- |
+| 系统 / 架构 | macOS 13+，Apple Silicon + Intel universal | Windows 10 2004+ / 11，x64 / ARM64 |
+| 隧道后端 | Network / System Extension | 官方 WireGuard for Windows 服务与驱动 |
+| 配置与统计 | `.conf` / ZIP、新建、编辑、导出、握手与流量 | `.conf` / ZIP、新建、编辑、导出、握手与流量 |
+| 代理 | 快照同步到隧道临时网络设置 | 沿用现有用户系统代理，不修改全局设置 |
+| 检查 / 回滚 | 连接前后与来源设置变化检查，失败断开 | 连接前后与每 4 秒设置变化检查，失败移除本次服务 |
+| 凭据存储 | 用户钥匙串 | 用户 DPAPI；服务配置使用机器 DPAPI 与受限 ACL |
+| 桌面集成 | 菜单栏、按需连接、关闭窗口后保持连接 | 系统托盘；关闭窗口断开，启动清理遗留服务 |
+| 分发 | Developer ID + 公证 ZIP / DMG | 自包含 ZIP / 安装 EXE；可选 Authenticode |
+
+Windows 尚无按需连接、macOS 历史内置 Mihomo 模式和应用内自动更新。ARM64 已交叉编译，ARM64 实机及真实远端 VPN / 代理组合验收尚待完成；服务运行不代表已完成握手。
 
 ## 为什么做 TunnelOne
 
@@ -30,9 +49,9 @@ WireGuard 可以承担底层上网路由，但连接后生效的隧道网络设�
 
 TunnelOne 把代理偏好保存在各自的 VPN 配置中，由 Network Extension 随隧道应用。菜单栏连接、按需连接与主窗口连接使用同一份设置，主窗口关闭后仍由扩展管理连接。
 
-## 功能与实现范围
+## macOS 功能与实现范围
 
-| 功能 | v0.3.0 实现 |
+| 功能 | v0.4.0 macOS 实现 |
 | --- | --- |
 | WireGuard 隧道管理 | 基于官方 macOS 客户端：新建、导入 `.conf` / ZIP、编辑、启停、删除、导出 |
 | 多对端与运行信息 | 公钥、地址、DNS、MTU、AllowedIPs、Endpoint、保活、握手与收发统计 |
@@ -47,7 +66,7 @@ TunnelOne 把代理偏好保存在各自的 VPN 配置中，由 Network Extensio
 
 当前**没有**实现订阅 URL 管理、节点可视化选择、测速、应用内自动更新和独立的全应用 TUN 代理。节点、规则和订阅继续由用户选择的代理客户端管理。原型内的数据与连接为模拟；应用窗口读取实际隧道状态、统计和扩展检查报告，不使用模拟结果。
 
-## 工作原理
+## macOS 工作原理
 
 1. 连接前读取当前生效的系统代理，分别保存 HTTP、HTTPS、SOCKS、PAC 和绕过规则。通过系统网络栈验证快照对应的访问规则。
 2. 启动用户选择的 WireGuard 隧道，优先通过 NEProxySettings 设置 HTTP / HTTPS / PAC。等待系统 Connected 与一秒稳定期后，定位属于本次接口的临时网络服务，将完整代理字典（含 SOCKS）同步到其 State。
@@ -60,6 +79,10 @@ TunnelOne 把代理偏好保存在各自的 VPN 配置中，由 Network Extensio
 历史内置 Mihomo 模式继续保留，使用其独立的 YAML、端口和接口绑定设置；自动沿用系统代理不使用这些字段。
 
 ## 使用方法
+
+**Windows：** 下载对应架构的 `-setup.exe`，安装后以自己的管理员账户启动，导入 WireGuard 配置，在代理客户端启用系统代理，然后连接。便携版先安装包内 `Dependencies/wireguard.msi`。最小化后可从托盘恢复；关闭窗口会断开连接。完整步骤及数据位置见 [Windows 指南](docs/windows.md)。
+
+**macOS：**
 
 以下连接步骤针对已完成正确签名的构建。使用预览前请先阅读[签名指南](docs/signing.md)。
 
@@ -74,6 +97,16 @@ TunnelOne 把代理偏好保存在各自的 VPN 配置中，由 Network Extensio
 `examples/proxy.yaml` 是不含节点凭据的 DIRECT 示例，只用于理解格式，不提供网络服务。代理 YAML 首先做 UTF-8 与大小检查，连接时再由 YAML 解析器和 Mihomo 校验。
 
 ## 开发与构建
+
+Windows 开发使用 .NET 10 SDK、PowerShell 和 Inno Setup 6，可在 Windows 机器交叉生成两个架构：
+
+```powershell
+dotnet run --project Windows/TunnelOne.Tests -c Release
+./scripts/build-windows.ps1 -Architecture x64
+./scripts/build-windows.ps1 -Architecture arm64
+```
+
+产物在 `dist/`。不生成安装包时可加 `-SkipInstaller`。真实隔离服务测试及可选签名见 [Windows 指南](docs/windows.md#开发测试与发布)。以下为 macOS 构建步骤。
 
 需要 macOS 13+、完整 Xcode 15+、Python 3.12+ 和 XcodeGen。已在 Xcode 27.0 上进行本地构建验证；CI 使用 GitHub macOS runner。
 
@@ -133,16 +166,17 @@ bash scripts/build.sh --signed
 
 | 触发 | 工作流 | 结果 |
 | --- | --- | --- |
-| PR、push 到 main、手动触发 | `build.yml` | 编译、测试、上传预览 ZIP / DMG 等 artifact |
+| PR、push 到 main、手动触发 | `build.yml` + `windows.yml` | 编译测试 macOS 与 Windows x64 / ARM64；上传 ZIP / DMG / 安装 EXE 与校验文件 |
 | push 到 main（网站更新）、手动触发 | `pages.yml` | 测试官网并部署 `website/` 到 GitHub Pages |
-| push `v*` tag | `build.yml` | 检查版本、签名、公证、打包、附对应源码后发布 Signed Beta |
+| push `v*` tag | `build.yml` | 检查版本，等待全部平台成功，签名公证 macOS，合并 Windows 安装包与源码到同一个 Release |
+| 手动触发 | `windows.yml` | 单独测试与构建两个 Windows 架构，上传 artifact |
 | 手动触发（需签名环境） | `signed-build.yml` | 签名开发构建并上传 artifact，不提升正式版 |
 
 发布新版本（签名凭据齐全时自动公证）：
 
 ```bash
-git tag v0.3.0
-git push origin v0.3.0
+git tag v0.4.0
+git push origin v0.4.0
 ```
 
 后续版本先更新 `VERSION` 与 `project.yml`，添加 `docs/releases/<版本>.md`，再推送对应 tag。工作流拒绝版本不一致的发布，且不会把未签名预览标成正式版。签名版本默认仍为 Beta；完成真实设备验收后才将仓库变量 `RELEASE_CHANNEL` 改为 `stable`。
@@ -158,6 +192,7 @@ Sources/
   Shared/                    钥匙串、日志、配置与代理文件存储
   TunnelOneShared/           可独立测试的代理偏好模型
 CoreLauncher/                YAML 规范化、核心进程与父进程监控
+Windows/                     Windows 原生 UI、DPAPI、官方服务桥接与测试
 Tests/                       Swift 偏好模型测试
 website/                     官网与设计原型
 docs/                        签名、架构、验收及发布说明
@@ -165,9 +200,11 @@ scripts/                     依赖锁定、构建、测试与打包
 .github/workflows/           CI、Pages 和发布
 ```
 
-保留的 iOS 上游源码不属于当前构建目标；本项目目前仅支持 macOS。
+保留的 iOS 上游源码不属于当前构建目标；当前桌面构建支持 macOS 与 Windows。
 
 ## 数据与隐私
+
+Windows 用户配置在 `%LOCALAPPDATA%\TunnelOne\Profiles` 中由当前用户 DPAPI 加密。服务配置位于 `%ProgramData%\TunnelOne` 的账户隔离目录，采用机器 DPAPI 和 SYSTEM / 管理员 ACL，正常断开删除。导出标准 `.conf` 包含明文私钥。更多信息见 [Windows 存储与恢复](docs/windows.md#存储与恢复)。以下描述适用于 macOS。
 
 WireGuard 私钥继续使用系统钥匙串和上游访问控制。代理 YAML 存在本机 App Group 容器 `ProxyProfiles/<UUID>.yaml`，目录权限 `0700`、文件权限 `0600`；它包含敏感节点信息，当前不额外加密。配置不会上传到项目服务器，应用没有遥测。YAML 中的远程 provider 仍可能按其自身配置访问订阅与规则服务。
 

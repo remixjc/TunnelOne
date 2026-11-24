@@ -15,6 +15,16 @@ configuration persistence, and network extension to add proxy lifecycle support.
 The upstream sources also include minizip/zlib, whose notices remain in
 Sources/WireGuardApp/ZipArchive/3rdparty/minizip.
 
+## WireGuard for Windows and .NET
+
+Windows packages instead use the unmodified official WireGuard for Windows
+1.1.1 MSI (MIT), pinned by SHA-256 in scripts/windows-dependencies.lock.json
+and checked for a valid WireGuard LLC Authenticode signature. The MSI and its
+driver are not rebuilt or re-signed by TunnelOne. See WireGuard-Windows-LICENSE
+and https://git.zx2c4.com/wireguard-windows/tag/?h=v1.1.1 for upstream source.
+Windows does not bundle Mihomo. Self-contained Windows packages also include
+the Microsoft .NET runtime; see DotNet-LICENSE and DotNet-ThirdPartyNotices.txt.
+
 ## Mihomo
 
 The separate bundled Mihomo executable is unmodified upstream v1.19.34,

@@ -297,4 +297,8 @@ button,a{-webkit-tap-highlight-color:transparent}
 .footer{padding-top:25px;padding-bottom:28px}
 .footer>div{font-size:10px;gap:15px}
 .footer .brand strong{font-size:14px}}
+.platform-downloads{padding-top:60px;padding-bottom:60px;scroll-margin-top:80px}
+.platform-downloads .feature-card{min-width:0}
+.platform-downloads .feature-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.platform-downloads .feature-card p+p{margin-top:16px}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{animation:none!important;transition:none!important}}
