@@ -8,6 +8,10 @@ Windows 本地 .NET 编译通过（0 警告 / 0 错误），26 项测试通过�
 
 首轮 main CI（`8f5101c`，[运行记录](https://github.com/remixjc/TunnelOne/actions/runs/45374503663)）已全部通过：macOS 通用构建和原有测试、Windows 两个架构的 29 项测试（包含真实加密服务启动 / 统计 / 移除）、原生窗口渲染、两个架构的安装 EXE / ZIP 与校验文件。官网本地交互、320 / 390px 布局和客户端 UI 测试通过。
 
+最终标签 `v0.4.0` 指向 `889e760`，[发布流水线](https://github.com/remixjc/TunnelOne/actions/runs/45376474167) 全部成功。两组 Windows 均通过 29 项测试；x64 额外完成安装 EXE 的静默安装、自包含应用启动渲染和卸载；两个架构均校验最终 PE 架构。macOS 完成 Developer ID 签名、原有回归、应用与 DMG 的 Apple 公证及 staple。统一 Release 已发布 10 个文件；下载 3 份 SHA-256 清单，逐项核对其自身及所列安装包 / ZIP / 源码与 GitHub asset digest 一致。
+
+[官网部署](https://github.com/remixjc/TunnelOne/actions/runs/45375434092) 成功，线上页面 HTTP 200，包含 v0.4.0 与 Windows 双架构下载入口。Pages 使用运行范围的 REST artifact 查询与 OIDC 部署，以解决上传后 artifact-client 返回空列表的问题。
+
 本机没有提升到管理员，未启动实际 VPN 或修改本机代理。ARM64 实机、真实远端握手与上网、具体代理客户端、休眠与网络切换仍待验收。界面区分服务运行和实际握手，不将自动化隔离服务测试标为真实 VPN 联网成功。
 
 ## v0.3.0 · 系统代理自动继承 · 2026-11-12

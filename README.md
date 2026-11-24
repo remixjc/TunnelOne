@@ -11,7 +11,7 @@
   <a href="docs/signing.md">macOS 签名与发布</a>
 </p>
 <p align="center">
-  <a href="https://github.com/remixjc/TunnelOne/actions/workflows/build.yml"><img src="https://github.com/remixjc/TunnelOne/actions/workflows/build.yml/badge.svg" alt="macOS build"></a>
+  <a href="https://github.com/remixjc/TunnelOne/actions/workflows/build.yml"><img src="https://github.com/remixjc/TunnelOne/actions/workflows/build.yml/badge.svg" alt="macOS and Windows build"></a>
   <a href="https://github.com/remixjc/TunnelOne/actions/workflows/pages.yml"><img src="https://github.com/remixjc/TunnelOne/actions/workflows/pages.yml/badge.svg" alt="Pages"></a>
   <img src="https://img.shields.io/badge/macOS-13%2B-153c36" alt="macOS 13 or newer">
   <img src="https://img.shields.io/badge/Windows-10%20%2F%2011-465fff" alt="Windows 10 and 11">
